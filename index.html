@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Arena: Sky Update</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon-blue: #06b6d4; --neon-pink: #d946ef; }
+        body {
+            background-color: #020617; margin: 0; overflow: hidden; font-family: 'Rajdhani', sans-serif;
+            user-select: none; display: flex; align-items: center; justify-content: center; height: 100vh; color: white;
+            background-image: radial-gradient(circle at center, #0f172a 0%, #000 100%);
+        }
+        h1, h2, h3, .btn-neon { font-family: 'Orbitron', sans-serif; letter-spacing: 2px; }
+        
+        #game-container {
+            position: relative; width: 1280px; height: 720px;
+            box-shadow: 0 0 100px rgba(0,0,0,0.8);
+            background: #0f172a; border-radius: 12px; border: 1px solid #1e293b; overflow: hidden;
+        }
+        canvas { display: block; image-rendering: pixelated; }
+        
+        .ui-screen {
+            position: absolute; inset: 0; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(5px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; transition: all 0.3s ease;
+        }
+        .hidden { opacity: 0; pointer-events: none; z-index: -1; }
+        
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+            border: 1px solid rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); backdrop-filter: blur(20px);
+        }
+
+        .btn-neon {
+            background: linear-gradient(180deg, var(--neon-blue), #1e40af);
+            border: none; padding: 14px 40px; color: white; font-weight: 900;
+            text-transform: uppercase; clip-path: polygon(12% 0, 100% 0, 100% 70%, 88% 100%, 0 100%, 0 30%);
+            cursor: pointer; transition: all 0.2s; text-shadow: 0 2px 0px rgba(0,0,0,0.5);
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-neon:hover { transform: translateY(-3px); filter: brightness(1.2); box-shadow: 0 10px 30px -5px var(--neon-blue); }
+        .btn-neon:active { transform: translateY(1px); filter: brightness(0.9); }
+        
+        .btn-icon {
+            width: 44px; height: 44px; border: 1px solid #334155; background: #1e293b;
+            color: #94a3b8; font-size: 20px; border-radius: 6px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .btn-icon:hover { border-color: var(--neon-blue); color: white; background: #334155; }
+        .tool-selected { border-color: #facc15; color: #facc15; box-shadow: 0 0 15px rgba(250, 204, 21, 0.2); transform: scale(1.1); z-index: 2; }
+
+        .input-group label { display: block; font-size: 10px; color: #cbd5e1; margin-bottom: 3px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+        select, input[type="color"], input[type="text"] {
+            width: 100%; padding: 8px 10px; background: #020617; border: 1px solid #334155; color: white; border-radius: 4px; outline: none; font-size: 13px; font-family: 'Rajdhani', sans-serif;
+        }
+        input[type="text"]:focus, select:focus { border-color: var(--neon-blue); }
+        input[type="color"] { height: 36px; padding: 2px; cursor: pointer; }
+
+        .victory-anim { animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes zoomIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
+        #audio-status { position: absolute; bottom: 20px; right: 20px; font-size: 10px; color: rgba(255,255,255,0.3); pointer-events: none; }
+    </style>
+</head>
+<body onclick="AudioEngine.start()">
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="1280" height="720"></canvas>
+        <div id="audio-status">CLICK TO ENABLE AUDIO SYSTEM</div>
+
+        <div id="menu-screen" class="ui-screen">
+            <h1 class="text-9xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-br from-cyan-300 via-blue-500 to-indigo-600 drop-shadow-[0_0_40px_rgba(6,182,212,0.5)] tracking-tighter" style="font-style: italic;">PIXEL ULTRA</h1>
+            <p class="mb-16 text-slate-400 tracking-[1em] font-bold text-xs uppercase">Sky Update</p>
+            <div class="flex gap-8">
+                <button onclick="Game.goToSelect()" class="btn-neon text-xl px-14 py-6">JUGAR</button>
+                <button onclick="Game.goToCustom()" class="btn-neon bg-gradient-to-b from-purple-500 to-purple-900" style="--neon-blue: #d946ef">Armería</button>
+                <button onclick="Game.startEditor()" class="btn-neon bg-gradient-to-b from-emerald-500 to-emerald-900" style="--neon-blue: #10b981">Editor</button>
+            </div>
+        </div>
+
+        <div id="select-screen" class="ui-screen hidden" style="background: rgba(2,6,23,0.3); flex-direction: row; justify-content: flex-start;">
+            <div class="glass-panel h-full w-96 p-10 border-r border-white/5 z-10 flex flex-col">
+                <h2 class="text-3xl font-black mb-10 text-white tracking-widest border-b border-white/10 pb-4">MAPAS</h2>
+                <div class="space-y-4 flex-1">
+                    <button onmouseenter="Game.previewMap('neon')" onclick="Game.confirmMap('neon')" class="w-full text-left p-5 bg-slate-900/50 hover:bg-cyan-900/40 border border-slate-700 hover:border-cyan-400 rounded-lg transition-all group">
+                        <div class="font-bold text-lg text-cyan-300 group-hover:text-white transition-transform">NEON CITY</div>
+                        <div class="text-xs text-slate-400 mt-1">Estándar equilibrado.</div>
+                    </button>
+                    <button onmouseenter="Game.previewMap('magma')" onclick="Game.confirmMap('magma')" class="w-full text-left p-5 bg-slate-900/50 hover:bg-red-900/40 border border-slate-700 hover:border-red-500 rounded-lg transition-all group">
+                        <div class="font-bold text-lg text-red-400 group-hover:text-white transition-transform">MAGMA CORE</div>
+                        <div class="text-xs text-slate-400 mt-1">Suelo de lava peligroso.</div>
+                    </button>
+                    <button onmouseenter="Game.previewMap('sky')" onclick="Game.confirmMap('sky')" class="w-full text-left p-5 bg-slate-900/50 hover:bg-sky-900/40 border border-slate-700 hover:border-sky-400 rounded-lg transition-all group">
+                        <div class="font-bold text-lg text-sky-300 group-hover:text-white transition-transform">SKY TEMPLE</div>
+                        <div class="text-xs text-slate-400 mt-1">NUEVO: Ascensores y plataformas.</div>
+                    </button>
+                </div>
+                <button onclick="Game.goToMenu()" class="mt-auto py-4 text-slate-500 hover:text-white tracking-widest font-bold transition-colors">← VOLVER</button>
+            </div>
+            <div class="flex-1 h-full pointer-events-none flex items-center justify-center">
+                <h2 id="preview-title" class="text-8xl font-black text-white/5 uppercase tracking-widest drop-shadow-xl">PREVIEW</h2>
+            </div>
+        </div>
+
+        <div id="custom-screen" class="ui-screen hidden">
+            <h2 class="text-5xl font-black mb-8 text-white tracking-wider border-b-2 border-white/10 pb-4 px-12">ARMERÍA</h2>
+            <div class="flex gap-16 mb-10">
+                <div class="glass-panel p-8 rounded-2xl border-t-4 border-t-blue-500 w-80 flex flex-col items-center relative shadow-[0_0_40px_rgba(59,130,246,0.1)]">
+                    <div class="input-group w-full mb-6"><label>Nombre P1</label><input type="text" id="p1-n" value="CYBER 01" maxlength="10" class="text-center font-bold text-blue-300 tracking-wider"></div>
+                    <div class="w-[140px] h-[140px] bg-slate-950 rounded-xl border border-slate-700 mb-6 flex items-center justify-center shadow-inner relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-transparent"></div>
+                        <canvas id="p1-preview" width="140" height="140" class="relative z-10"></canvas>
+                    </div>
+                    <div class="space-y-3 w-full">
+                        <div class="input-group"><label>Color de Energía</label><input type="color" id="p1-c" value="#3b82f6" oninput="Game.updatePreviews()"></div>
+                        <div class="input-group"><label>Casco</label><select id="p1-h" onchange="Game.updatePreviews()"><option value="none">Sin Casco</option><option value="tactical">Tactical Visor</option><option value="oni">Oni Cyber</option><option value="viking">Vikingo Holo</option></select></div>
+                        <div class="input-group"><label>Dorsal</label><select id="p1-b" onchange="Game.updatePreviews()"><option value="none">Ninguno</option><option value="cape">Nano-Capa</option><option value="wings">Alas de Neón</option><option value="jetpack">Propulsor</option></select></div>
+                        <div class="input-group"><label>Arma</label><select id="p1-w" onchange="Game.updatePreviews()"><option value="sword">Espada de Plasma</option><option value="katana">Katana Láser</option><option value="scythe">Guadaña del Vacío</option></select></div>
+                    </div>
+                </div>
+                <div class="glass-panel p-8 rounded-2xl border-t-4 border-t-red-500 w-80 flex flex-col items-center relative shadow-[0_0_40px_rgba(239,68,68,0.1)]">
+                    <div class="input-group w-full mb-6"><label>Nombre P2</label><input type="text" id="p2-n" value="SLAYER 02" maxlength="10" class="text-center font-bold text-red-300 tracking-wider"></div>
+                    <div class="w-[140px] h-[140px] bg-slate-950 rounded-xl border border-slate-700 mb-6 flex items-center justify-center shadow-inner relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-b from-red-900/20 to-transparent"></div>
+                        <canvas id="p2-preview" width="140" height="140" class="relative z-10"></canvas>
+                    </div>
+                    <div class="space-y-3 w-full">
+                        <div class="input-group"><label>Color de Energía</label><input type="color" id="p2-c" value="#ef4444" oninput="Game.updatePreviews()"></div>
+                        <div class="input-group"><label>Casco</label><select id="p2-h" onchange="Game.updatePreviews()"><option value="none">Sin Casco</option><option value="tactical">Tactical Visor</option><option value="oni">Oni Cyber</option><option value="viking">Vikingo Holo</option></select></div>
+                        <div class="input-group"><label>Dorsal</label><select id="p2-b" onchange="Game.updatePreviews()"><option value="none">Ninguno</option><option value="cape">Nano-Capa</option><option value="wings">Alas de Neón</option><option value="jetpack">Propulsor</option></select></div>
+                        <div class="input-group"><label>Arma</label><select id="p2-w" onchange="Game.updatePreviews()"><option value="sword">Espada de Plasma</option><option value="katana">Katana Láser</option><option value="scythe">Guadaña del Vacío</option></select></div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-6">
+                <button onclick="Game.saveAndExit()" class="btn-neon text-lg px-12">GUARDAR Y SALIR</button>
+                <button onclick="Game.goToMenu()" class="px-8 py-4 text-slate-400 hover:text-white font-bold transition-colors">CANCELAR</button>
+            </div>
+        </div>
+
+        <div id="editor-hud" class="absolute bottom-0 w-full glass-panel p-3 border-t border-white/10 flex items-center gap-3 hidden z-30">
+            <div class="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700">
+                <button onclick="Editor.setTool(1)" id="tool-1" class="btn-icon tool-selected" title="Bloque Sólido">⬜</button>
+                <button onclick="Editor.setTool(4)" id="tool-4" class="btn-icon" title="Plataforma">☰</button>
+                <button onclick="Editor.setTool(3)" id="tool-3" class="btn-icon text-red-500" title="Pincho (Rotar)">▲</button>
+                <button onclick="Editor.setTool(5)" id="tool-5" class="btn-icon text-orange-500" title="Lava">≈</button>
+            </div>
+            <div class="w-px h-10 bg-white/20"></div>
+            <button onclick="Editor.setTool(0)" id="tool-0" class="btn-icon text-slate-500 border-dashed hover:text-red-400 hover:border-red-400" title="Borrador">✕</button>
+            <div class="flex-1"></div>
+            <button onclick="Game.testLevel()" id="btn-test" class="btn-neon py-2 px-6 text-sm bg-gradient-to-r from-yellow-500 to-orange-500" style="--neon-blue: #f59e0b">PROBAR</button>
+            <button onclick="Editor.clear()" class="px-4 py-2 text-red-400 hover:text-red-300 font-bold rounded-md ml-4">LIMPIAR</button>
+            <button onclick="Game.goToMenu()" class="px-4 py-2 text-slate-400 hover:text-white font-bold">SALIR</button>
+        </div>
+
+        <div id="game-hud" class="absolute top-0 w-full p-8 flex justify-between hidden pointer-events-none z-30">
+            <div class="w-1/3">
+                <div class="flex justify-between text-cyan-400 font-black text-sm mb-1 tracking-wider"><span id="p1-name-hud" class="drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]">JUGADOR 1</span><span id="hp-txt-1">100%</span></div>
+                <div class="h-5 bg-slate-900/80 rounded-sm border-2 border-cyan-500/50 overflow-hidden relative shadow-[0_0_20px_rgba(6,182,212,0.3)]"><div id="hp-bar-1" class="h-full bg-gradient-to-r from-cyan-400 to-blue-600 w-full transition-all duration-200"></div></div>
+            </div>
+            <button onclick="Game.goToMenu()" class="pointer-events-auto px-6 py-2 bg-black/40 text-white/40 hover:bg-red-900/80 hover:text-white rounded border border-white/10 text-xs font-bold transition-all backdrop-blur-sm">ABANDONAR</button>
+            <div class="w-1/3">
+                <div class="flex justify-between text-red-400 font-black text-sm mb-1 tracking-wider"><span id="p2-name-hud" class="drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]">JUGADOR 2</span><span id="hp-txt-2">100%</span></div>
+                <div class="h-5 bg-slate-900/80 rounded-sm border-2 border-red-500/50 overflow-hidden relative shadow-[0_0_20px_rgba(239,68,68,0.3)]"><div id="hp-bar-2" class="h-full bg-gradient-to-l from-red-500 to-orange-600 w-full transition-all duration-200 float-right"></div></div>
+            </div>
+        </div>
+
+        <div id="victory-screen" class="ui-screen hidden z-50">
+            <div class="victory-anim flex flex-col items-center">
+                <h1 class="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 mb-4 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)] uppercase italic">¡VICTORIA!</h1>
+                <h2 id="winner-name" class="text-9xl font-black text-white mb-10 drop-shadow-xl uppercase tracking-tighter">NOMBRE</h2>
+                <div class="flex gap-6">
+                    <button onclick="Game.restartGame()" class="btn-neon text-lg">RE-MATCH</button>
+                    <button onclick="Game.goToMenu()" class="px-10 py-4 bg-slate-800 text-white font-bold rounded border border-slate-600 hover:bg-slate-700 transition-colors uppercase tracking-widest">Menú Principal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- AUDIO SYSTEM (Procedural Synthesis) --- */
+        const AudioEngine = {
+            ctx: null, isEnabled: false,
+            start: () => { if(!AudioEngine.ctx) { AudioEngine.ctx = new (window.AudioContext||window.webkitAudioContext)(); AudioEngine.isEnabled=true; document.getElementById('audio-status').style.display='none'; } if(AudioEngine.ctx.state==='suspended') AudioEngine.ctx.resume(); },
+            playTone: (freq, type, duration, vol=0.1) => {
+                if(!AudioEngine.isEnabled) return;
+                const osc = AudioEngine.ctx.createOscillator(); const gain = AudioEngine.ctx.createGain();
+                osc.type = type; osc.frequency.setValueAtTime(freq, AudioEngine.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, AudioEngine.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, AudioEngine.ctx.currentTime+duration);
+                osc.connect(gain); gain.connect(AudioEngine.ctx.destination); osc.start(); osc.stop(AudioEngine.ctx.currentTime+duration);
+            },
+            sfx: {
+                jump: () => AudioEngine.playTone(150, 'sine', 0.2, 0.1),
+                hit: () => AudioEngine.playTone(80, 'sawtooth', 0.1, 0.2),
+                slash: () => AudioEngine.playTone(400, 'triangle', 0.1, 0.05),
+                ui: () => AudioEngine.playTone(800, 'sine', 0.05, 0.05),
+                win: () => { 
+                    setTimeout(()=>AudioEngine.playTone(300,'square',0.5,0.1),0);
+                    setTimeout(()=>AudioEngine.playTone(400,'square',0.5,0.1),200);
+                    setTimeout(()=>AudioEngine.playTone(500,'square',1.0,0.1),400);
+                }
+            },
+            bgm: { /* Simulado simple */ }
+        };
+
+        const canvas=document.getElementById('gameCanvas');const ctx=canvas.getContext('2d');const TILE=40,COLS=32,ROWS=18,GRAVITY=0.6,FRICTION=0.85,JUMP_FORCE=-13.5,MOVE_SPEED=0.35,MAX_SPEED=2.8; 
+        let state='MENU',grid=[],entities=[],movingPlats=[],particles=[],keys={},mouse={x:0,y:0,down:false},frame=0;
+        let p1Config={name:'CYBER 01',color:'#06b6d4',helmet:'none',back:'none',weapon:'sword'},p2Config={name:'SLAYER 02',color:'#dc2626',helmet:'none',back:'none',weapon:'katana'};
+
+        class Player{
+            constructor(id,x,y,cfg){this.id=id;this.x=x;this.y=y;this.config=cfg;this.w=22;this.h=42;this.vx=0;this.vy=0;this.hp=100;this.grounded=false;this.facingRight=id===1;this.stun=0;this.atkCd=0;this.animFrame=0;this.ctrl=id===1?{l:'a',r:'d',u:'w',atk:' '}:{l:'ArrowLeft',r:'ArrowRight',u:'ArrowUp',atk:'Enter'};}
+            update(){
+                if(this.hp<=0)return; let inLava=Physics.checkLava(this);
+                if(this.stun<=0){if(keys[this.ctrl.l]){this.vx-=MOVE_SPEED;this.facingRight=false;this.animFrame++;}if(keys[this.ctrl.r]){this.vx+=MOVE_SPEED;this.facingRight=true;this.animFrame++;}if(keys[this.ctrl.u]){if(this.grounded){this.vy=JUMP_FORCE;this.grounded=false;AudioEngine.sfx.jump();}else if(inLava){this.vy=-7;AudioEngine.sfx.jump();}}if(keys[this.ctrl.atk]&&this.atkCd<=0)this.attack();}else this.stun--;
+                if(this.atkCd>0)this.atkCd--;
+                if(inLava){this.vx*=0.6;this.vy*=0.6;if(frame%30===0)this.hit(2);}else{this.vy+=GRAVITY;this.vx*=FRICTION;}
+                this.vx=Math.max(Math.min(this.vx,MAX_SPEED),-MAX_SPEED); this.x+=this.vx; Physics.collideX(this); this.y+=this.vy; Physics.collideY(this); Physics.checkSpikes(this); if(this.y>750)this.hit(100);
+            }
+            attack(){this.atkCd=40;AudioEngine.sfx.slash();let range=60;let hx=this.facingRight?this.x+this.w:this.x-range;particles.push({x:hx+(this.facingRight?0:range),y:this.y+20,color:this.config.color,life:10,size:2,isSlash:true});let enemy=entities.find(e=>e.id!==this.id);if(enemy&&enemy.hp>0&&hx<enemy.x+enemy.w&&hx+range>enemy.x&&Math.abs(this.y-enemy.y)<45){enemy.hit(12);enemy.vx=this.facingRight?7:-7;enemy.vy=-6;}}
+            hit(dmg){AudioEngine.sfx.hit();this.hp-=dmg;this.stun=15;for(let i=0;i<8;i++)particles.push({x:this.x+11,y:this.y+20,vx:(Math.random()-0.5)*8,vy:(Math.random()-0.5)*8,color:this.config.color,life:25,size:3});Game.updateUI();if(this.hp<=0)Game.endGame(this.id===1?2:1);}
+            draw(ctx){if(this.hp<=0)return;drawCharacterDetailed(ctx,this.x,this.y,this.facingRight,this.config.color,this.config,this.animFrame,this.atkCd);}
+        }
+
+        class MovingPlat { constructor(x,y,dx,dy,speed){this.start={x:x*TILE,y:y*TILE};this.x=this.start.x;this.y=this.start.y;this.w=TILE*3;this.h=15;this.dx=dx*TILE;this.dy=dy*TILE;this.speed=speed;} update(){let s=Math.sin(frame*this.speed);this.x=this.start.x+this.dx*s;this.y=this.start.y+this.dy*s;} draw(ctx){ctx.fillStyle='#64748b';ctx.fillRect(this.x,this.y,this.w,this.h);ctx.fillStyle='#94a3b8';ctx.fillRect(this.x,this.y,this.w,3);ctx.fillStyle='#334155';ctx.fillRect(this.x,this.y+12,this.w,3);}}
+
+        function drawCharacterDetailed(ctx,x,y,facingRight,color,config,animFrame=0,atkCd=0){
+            ctx.save(); ctx.translate(x+11,y+21); if(!facingRight)ctx.scale(-1,1);
+            let breath=Math.sin(frame*0.05)*1, walk=Math.sin(animFrame*0.3)*4, armRot=atkCd>25?-50+(40-atkCd)*2:(Math.sin(frame*0.05)*5);
+            if(config.back==='cape'){let flow=Math.sin(frame*0.2)*3;ctx.fillStyle=color;ctx.globalAlpha=0.6;ctx.beginPath();ctx.moveTo(-6,-12+breath);ctx.lineTo(-16+flow,25+walk+flow);ctx.lineTo(-2+flow,25-walk+flow);ctx.lineTo(6,-12+breath);ctx.fill();ctx.globalAlpha=1;}
+            else if(config.back==='wings'){ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=15;ctx.globalAlpha=0.6;let wingFlap=Math.sin(frame*0.1)*5;ctx.beginPath();ctx.moveTo(-4,-10+breath);ctx.quadraticCurveTo(-25+wingFlap,-40,-35+wingFlap,10);ctx.quadraticCurveTo(-15,-10,-4,0+breath);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;}
+            else if(config.back==='jetpack'){ctx.fillStyle='#475569';ctx.fillRect(-12,-12+breath,8,20);ctx.fillStyle='#334155';ctx.fillRect(-10,-8+breath,4,12);ctx.fillStyle=color;ctx.fillRect(-11,-2+breath,2,2);}
+            ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(-5,-2);ctx.lineTo(-7,15);ctx.lineTo(-3,15);ctx.lineTo(-1,-2);ctx.fill();ctx.beginPath();ctx.moveTo(1,-2);ctx.lineTo(-1+walk,15);ctx.lineTo(3+walk,15);ctx.lineTo(5,-2);ctx.fill();
+            ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=5;ctx.fillRect(-6+walk,8,4,2);ctx.fillRect(-1-walk*0.5,8,4,2);ctx.shadowBlur=0;
+            ctx.fillStyle='#1e293b';ctx.beginPath();ctx.moveTo(-8,-12+breath);ctx.lineTo(8,-12+breath);ctx.lineTo(6,2);ctx.lineTo(-6,2);ctx.fill();
+            ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=5;ctx.fillRect(-5,-8+breath,10,6);ctx.shadowBlur=0;
+            ctx.fillStyle='#f1f5f9';ctx.beginPath();ctx.arc(0,-17+breath,6,0,Math.PI*2);ctx.fill();
+            if(config.helmet==='tactical'){ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(-7,-19+breath);ctx.lineTo(7,-19+breath);ctx.lineTo(7,-24+breath);ctx.lineTo(4,-26+breath);ctx.lineTo(-4,-26+breath);ctx.lineTo(-7,-24+breath);ctx.fill();ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=5;ctx.fillRect(-5,-19+breath,10,3);ctx.shadowBlur=0;}
+            else if(config.helmet==='king'){ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.moveTo(-7,-19+breath);ctx.lineTo(-8,-26+breath);ctx.lineTo(-4,-22+breath);ctx.lineTo(0,-28+breath);ctx.lineTo(4,-22+breath);ctx.lineTo(8,-26+breath);ctx.lineTo(7,-19+breath);ctx.fill();}
+            else if(config.helmet==='oni'){ctx.fillStyle='#991b1b';ctx.beginPath();ctx.arc(0,-17+breath,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(-4,-22+breath);ctx.lineTo(-6,-28+breath);ctx.lineTo(-2,-24+breath);ctx.moveTo(4,-22+breath);ctx.lineTo(6,-28+breath);ctx.lineTo(2,-24+breath);ctx.fill();}
+            else if(config.helmet==='viking'){ctx.fillStyle='#334155';ctx.fillRect(-7,-22+breath,14,6);ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=8;ctx.beginPath();ctx.moveTo(-7,-20+breath);ctx.lineTo(-12,-30+breath);ctx.lineTo(-9,-22+breath);ctx.moveTo(7,-20+breath);ctx.lineTo(12,-30+breath);ctx.lineTo(9,-22+breath);ctx.fill();ctx.shadowBlur=0;}
+            ctx.save();ctx.translate(0,-9+breath);ctx.rotate(armRot*Math.PI/180);ctx.fillStyle=color;ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#1e293b';ctx.fillRect(-2,0,4,10);
+            if(config.weapon==='scythe'){ctx.fillStyle='#0f172a';ctx.fillRect(-1,6,2,30);ctx.fillStyle='#94a3b8';ctx.beginPath();ctx.moveTo(0,6);ctx.quadraticCurveTo(25,0,30,15);ctx.lineTo(25,18);ctx.quadraticCurveTo(20,8,0,10);ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.shadowColor=color;ctx.shadowBlur=10;ctx.beginPath();ctx.moveTo(0,6);ctx.quadraticCurveTo(25,0,30,15);ctx.stroke();ctx.shadowBlur=0;}
+            else if(config.weapon==='katana'){ctx.fillStyle='#000';ctx.fillRect(-1,8,2,8);ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(0,16);ctx.quadraticCurveTo(3,30,1,45);ctx.lineTo(-1,45);ctx.quadraticCurveTo(1,30,-1,16);ctx.fill();ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=5;ctx.fillRect(-3,14,6,2);ctx.shadowBlur=0;}
+            else{ctx.fillStyle='#334155';ctx.fillRect(-3,12,6,2);ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=10;ctx.fillRect(-1.5,14,3,24);ctx.shadowBlur=0;ctx.globalAlpha=0.7;ctx.fillStyle='white';ctx.fillRect(-0.5,14,1,24);ctx.globalAlpha=1;}
+            ctx.restore();ctx.restore();
+        }
+
+        const Physics={
+            collideX:(e)=>{let l=Math.floor(e.x/TILE),r=Math.floor((e.x+e.w-0.01)/TILE),t=Math.floor(e.y/TILE),b=Math.floor((e.y+e.h-0.01)/TILE);if(e.vx>0&&(Physics.solid(r,t)||Physics.solid(r,b))){e.x=r*TILE-e.w-0.01;e.vx=0;}else if(e.vx<0&&(Physics.solid(l,t)||Physics.solid(l,b))){e.x=(l+1)*TILE+0.01;e.vx=0;}},
+            collideY:(e)=>{let l=Math.floor(e.x/TILE),r=Math.floor((e.x+e.w-0.01)/TILE),t=Math.floor(e.y/TILE),b=Math.floor((e.y+e.h-0.01)/TILE);if(e.vy>0){if(Physics.solid(l,b)||Physics.solid(r,b)){e.y=b*TILE-e.h-0.01;e.vy=0;e.grounded=true;return;}let fp=e.y-e.vy+e.h;if((Physics.plat(l,b)||Physics.plat(r,b))&&fp<=b*TILE+10){e.y=b*TILE-e.h-0.01;e.vy=0;e.grounded=true;return;}
+            for(let mp of movingPlats){if(e.x+e.w>mp.x&&e.x<mp.x+mp.w&&fp<=mp.y+10&&fp>=mp.y-5){e.y=mp.y-e.h;e.vy=0;e.grounded=true;e.x+=(mp.x-(mp.start.x+mp.dx*Math.sin((frame-1)*mp.speed)));return;}}}
+            else if(e.vy<0&&(Physics.solid(l,t)||Physics.solid(r,t))){e.y=(t+1)*TILE+0.01;e.vy=0;}e.grounded=false;},
+            checkLava:(e)=>{let cx=Math.floor((e.x+e.w/2)/TILE),fy=Math.floor((e.y+e.h)/TILE);return (grid[cx]?grid[cx][fy]:0)===5;},
+            checkSpikes:(e)=>{let cx=Math.floor((e.x+e.w/2)/TILE),fy=Math.floor((e.y+e.h)/TILE);if((grid[cx]?grid[cx][fy]:0)>=30){e.hit(15);e.vy=-10;}},
+            solid:(x,y)=>x>=0&&x<COLS&&y>=0&&y<ROWS&&(grid[x][y]===1||grid[x][y]===9), plat:(x,y)=>x>=0&&x<COLS&&y>=0&&y<ROWS&&grid[x][y]===4
+        };
+
+        const Game={
+            init:()=>{Editor.initGrid();Game.updatePreviews();canvas.addEventListener('mousedown',e=>{AudioEngine.start();mouse.down=true;Game.trackMouse(e);if(state==='EDITOR')Editor.interact();});canvas.addEventListener('mousemove',e=>{Game.trackMouse(e);if(state==='EDITOR'&&mouse.down)Editor.interact();});window.addEventListener('mouseup',()=>mouse.down=false);window.addEventListener('keydown',e=>keys[e.key]=true);window.addEventListener('keyup',e=>keys[e.key]=false);Game.loop();},
+            trackMouse:(e)=>{const r=canvas.getBoundingClientRect();mouse.x=Math.floor((e.clientX-r.left)/(r.width/COLS));mouse.y=Math.floor((e.clientY-r.top)/(r.height/ROWS));},
+            loop:()=>{frame++;ctx.fillStyle='#020617';ctx.fillRect(0,0,1280,720);Renderer.drawMap();if(state==='GAME'||state==='TEST'||state==='SELECT'){entities.forEach(e=>{e.update();e.draw(ctx);});Renderer.drawParticles();}if(state==='EDITOR')Renderer.drawEditor();if(state==='SELECT'){ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,1280,720);}requestAnimationFrame(Game.loop);},
+            showScreen:(id)=>{document.querySelectorAll('.ui-screen,#editor-hud,#game-hud,#victory-screen').forEach(e=>e.classList.add('hidden'));if(id)document.getElementById(id).classList.remove('hidden');},
+            goToMenu:()=>{Game.showScreen('menu-screen');state='MENU';entities=[];Game.loadMap('neon');},
+            goToCustom:()=>{Game.showScreen('custom-screen');Game.updatePreviews();},
+            goToSelect:()=>{Game.showScreen('select-screen');state='SELECT';Game.previewMap('neon');},
+            startEditor:()=>{Game.showScreen('editor-hud');state='EDITOR';Editor.clear();}, // CLEAN EDITOR
+            startGame:()=>{Game.showScreen('game-hud');state='GAME';entities=[new Player(1,100,100,p1Config),new Player(2,1100,100,p2Config)];Game.updateUI();document.getElementById('p1-name-hud').innerText=p1Config.name;document.getElementById('p2-name-hud').innerText=p2Config.name;},
+            saveAndExit:()=>{p1Config.name=document.getElementById('p1-n').value;p2Config.name=document.getElementById('p2-n').value;Game.goToMenu();},
+            testLevel:()=>{let btn=document.getElementById('btn-test');if(state==='EDITOR'){state='TEST';entities=[new Player(1,100,100,p1Config),new Player(2,1100,100,p2Config)];btn.innerText="PARAR";btn.style.background='#dc2626';}else{state='EDITOR';entities=[];btn.innerText="PROBAR";btn.style.background='';}},
+            updatePreviews:()=>{p1Config={name:p1Config.name,color:document.getElementById('p1-c').value,helmet:document.getElementById('p1-h').value,back:document.getElementById('p1-b').value,weapon:document.getElementById('p1-w').value};p2Config={name:p2Config.name,color:document.getElementById('p2-c').value,helmet:document.getElementById('p2-h').value,back:document.getElementById('p2-b').value,weapon:document.getElementById('p2-w').value};Game.renderPrev('p1-preview',p1Config,true);Game.renderPrev('p2-preview',p2Config,false);},
+            renderPrev:(id,cfg,right)=>{let pCtx=document.getElementById(id).getContext('2d');pCtx.clearRect(0,0,140,140);pCtx.save();pCtx.translate(70,70);pCtx.scale(2.5,2.5);pCtx.translate(-11,-21);drawCharacterDetailed(pCtx,0,0,right,cfg.color,cfg);pCtx.restore();},
+            updateUI:()=>{if(entities.length<2)return;document.getElementById('hp-bar-1').style.width=Math.max(0,entities[0].hp)+'%';document.getElementById('hp-bar-2').style.width=Math.max(0,entities[1].hp)+'%';document.getElementById('hp-txt-1').innerText=Math.ceil(Math.max(0,entities[0].hp))+'%';document.getElementById('hp-txt-2').innerText=Math.ceil(Math.max(0,entities[1].hp))+'%';},
+            loadMap:(t)=>{grid=new Array(COLS).fill(0).map(()=>new Array(ROWS).fill(0));movingPlats=[];for(let i=0;i<COLS;i++){grid[i][0]=9;grid[i][ROWS-1]=9;}for(let i=0;i<ROWS;i++){grid[0][i]=9;grid[COLS-1][i]=9;}
+                if(t==='neon'){
+                    for(let x=2;x<30;x++)grid[x][16]=1;
+                    grid[8][14]=1; grid[9][13]=1; grid[23][14]=1; grid[22][13]=1; // Escaleras
+                    for(let x=10;x<22;x++)grid[x][12]=4;
+                    movingPlats.push(new MovingPlat(4,10,3,0,0.02)); movingPlats.push(new MovingPlat(25,10,-3,0,0.02));
+                } else if(t==='magma'){
+                    for(let x=1;x<31;x++)grid[x][16]=(x>10&&x<22)?5:1;
+                    grid[8][14]=1; grid[9][13]=4; grid[23][14]=1; grid[22][13]=4;
+                    movingPlats.push(new MovingPlat(12,12,0,3,0.02)); movingPlats.push(new MovingPlat(18,12,0,-3,0.02));
+                } else if(t==='sky'){
+                    for(let x=10; x<22; x++) grid[x][16] = 1;
+                    for(let x=6; x<10; x++) grid[x][13] = 4; for(let x=22; x<26; x++) grid[x][13] = 4;
+                    for(let x=14; x<18; x++) grid[x][9] = 4;
+                    movingPlats.push(new MovingPlat(3, 14, 0, -8, 0.02)); movingPlats.push(new MovingPlat(28, 14, 0, -8, 0.02)); 
+                }
+            },
+            previewMap:(t)=>{Game.loadMap(t);document.getElementById('preview-title').innerText=t.toUpperCase();},
+            confirmMap:(t)=>{Game.loadMap(t);Game.startGame();},
+            endGame:(winnerId)=>{if(state!=='GAME')return;AudioEngine.sfx.win();document.getElementById('victory-screen').classList.remove('hidden');document.getElementById('winner-name').innerText=entities[winnerId-1].config.name;document.getElementById('winner-name').style.color=entities[winnerId-1].config.color;},
+            restartGame:()=>{document.getElementById('victory-screen').classList.add('hidden');Game.startGame();}
+        };
+        const Editor={tool:1,rot:0,initGrid:()=>{grid=new Array(COLS).fill(0).map(()=>new Array(ROWS).fill(0));for(let i=0;i<COLS;i++){grid[i][0]=9;grid[i][ROWS-1]=9;}for(let i=0;i<ROWS;i++){grid[0][i]=9;grid[COLS-1][i]=9;}},setTool:(id)=>{if(id===3&&Editor.tool===3)Editor.rot=(Editor.rot+1)%4;else Editor.rot=0;Editor.tool=id;document.querySelectorAll('.btn-icon').forEach(b=>b.classList.remove('tool-selected'));document.getElementById('tool-'+id).classList.add('tool-selected');},interact:()=>{let{x,y}=mouse;if(x<=0||x>=COLS-1||y<=0||y>=ROWS-1)return;if(Editor.tool===3)grid[x][y]=30+Editor.rot;else if(Editor.tool===0){if(grid[x][y]!==9)grid[x][y]=0;}else grid[x][y]=Editor.tool;},clear:()=>{for(let x=1;x<COLS-1;x++)for(let y=1;y<ROWS-1;y++)grid[x][y]=0;}};
+        const Renderer={drawMap:()=>{for(let x=0;x<COLS;x++)for(let y=0;y<ROWS;y++){let id=grid[x][y];if(!id)continue;let px=x*TILE,py=y*TILE;if(id===1){ctx.fillStyle='#1e293b';ctx.fillRect(px,py,TILE,TILE);ctx.fillStyle='#0f172a';ctx.fillRect(px+2,py+2,36,36);ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.strokeRect(px+4,py+4,32,32);}else if(id===4){ctx.fillStyle='#475569';ctx.fillRect(px,py,40,10);ctx.fillStyle='#000';ctx.fillRect(px,py,40,2);ctx.fillStyle='#94a3b8';ctx.fillRect(px+2,py+3,36,4);}else if(id===5){let w=Math.sin(frame*0.1+x)*4;ctx.fillStyle='#c2410c';ctx.fillRect(px,py+10,40,30);ctx.fillStyle='#ea580c';ctx.beginPath();ctx.moveTo(px,py+10);ctx.quadraticCurveTo(px+20,py+10+w,px+40,py+10);ctx.lineTo(px+40,py+40);ctx.lineTo(px,py+40);ctx.fill();}else if(id>=30)Renderer.drawSpike(px,py,id);else if(id===9){ctx.fillStyle='#000';ctx.fillRect(px,py,40,40);}} for(let mp of movingPlats)mp.update(),mp.draw(ctx);},drawSpike:(x,y,id)=>{ctx.fillStyle='#991b1b';ctx.beginPath();if(id===30){ctx.moveTo(x,y+40);ctx.lineTo(x+20,y);ctx.lineTo(x+40,y+40);}else if(id===31){ctx.moveTo(x,y);ctx.lineTo(x+40,y+20);ctx.lineTo(x,y+40);}else if(id===32){ctx.moveTo(x,y);ctx.lineTo(x+20,y+40);ctx.lineTo(x+40,y);}else{ctx.moveTo(x+40,y);ctx.lineTo(x,y+20);ctx.lineTo(x+40,y+40);}ctx.fill();},drawEditor:()=>{ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=1;for(let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*TILE,0);ctx.lineTo(i*TILE,720);ctx.stroke();}for(let i=0;i<=ROWS;i++){ctx.beginPath();ctx.moveTo(0,i*TILE);ctx.lineTo(1280,i*TILE);ctx.stroke();}if(mouse.x>0&&mouse.x<COLS-1&&mouse.y>0&&mouse.y<ROWS-1){let px=mouse.x*TILE,py=mouse.y*TILE;ctx.strokeStyle='white';ctx.lineWidth=2;ctx.strokeRect(px,py,40,40);ctx.globalAlpha=0.5;if(Editor.tool===3)Renderer.drawSpike(px,py,30+Editor.rot);else{ctx.fillStyle=Editor.tool===0?'red':(Editor.tool===5?'orange':'white');ctx.fillRect(px+10,py+10,20,20);}ctx.globalAlpha=1;}},drawParticles:()=>{for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx;p.y+=p.vy;p.life--;if(p.isSlash){ctx.strokeStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=10;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,25,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;}else{ctx.fillStyle=p.color;ctx.globalAlpha=p.life/30;ctx.fillRect(p.x,p.y,p.size,p.size);ctx.globalAlpha=1;}if(p.life<=0)particles.splice(i,1);}}};
+        Game.init();
+    </script>
+</body>
+</html>
