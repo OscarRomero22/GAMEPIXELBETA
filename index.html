@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Arena: beta</title>
+    <title>Pixel Arena: Beta 2.7 - Saw Update</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon-blue: #06b6d4; --neon-pink: #d946ef; --neon-gold: #fbbf24; }
+        :root { --neon-blue: #06b6d4; --neon-pink: #d946ef; --neon-gold: #fbbf24; --neon-red: #ef4444; }
         body {
             background-color: #020617; margin: 0; overflow: hidden; font-family: 'Rajdhani', sans-serif;
             user-select: none; display: flex; align-items: center; justify-content: center; height: 100vh; color: white;
@@ -22,19 +22,41 @@
         }
         canvas { display: block; outline: none; } 
         
+        /* UI & ESTILOS */
         .ui-screen {
-            position: absolute; inset: 0; background: rgba(2, 6, 23, 0.96); backdrop-filter: blur(8px);
+            position: absolute; inset: 0; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(5px);
             display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; transition: all 0.3s ease;
         }
         .hidden { opacity: 0; pointer-events: none; z-index: -1; display: none !important; }
         
         .glass-panel {
-            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.98));
             border: 1px solid rgba(255,255,255,0.08); border-top: 1px solid rgba(255,255,255,0.2);
             box-shadow: 0 20px 50px rgba(0,0,0,0.6); backdrop-filter: blur(20px);
             border-radius: 16px;
         }
 
+        /* ANIMACIÓN DE TÍTULO */
+        @keyframes title-pulse {
+            0% { transform: scale(1); text-shadow: 0 0 20px rgba(6, 182, 212, 0.5); }
+            50% { transform: scale(1.02); text-shadow: 0 0 40px rgba(217, 70, 239, 0.8), 0 0 10px white; }
+            100% { transform: scale(1); text-shadow: 0 0 20px rgba(6, 182, 212, 0.5); }
+        }
+        .title-anim { animation: title-pulse 3s infinite ease-in-out; }
+
+        /* EFECTO GLITCH TEXT */
+        .glitch-text { animation: glitch 0.3s linear infinite; font-weight: 900; color: #fff; text-shadow: 2px 0 #f00, -2px 0 #0ff; }
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        /* ALERTA ROJA */
+        .alert-pulse { animation: alertAnim 0.2s infinite alternate; color: #ef4444; text-shadow: 0 0 20px #f00; font-family: 'Orbitron'; letter-spacing: 4px; }
+        @keyframes alertAnim { from { opacity: 1; transform: scale(1); } to { opacity: 0.8; transform: scale(1.05); } }
+
+        /* BOTONES */
         .btn-neon {
             background: linear-gradient(180deg, var(--neon-blue), #1e40af);
             border: none; padding: 14px 40px; color: white; font-weight: 900;
@@ -44,56 +66,65 @@
         }
         .btn-neon:hover { transform: translateY(-3px) scale(1.05); filter: brightness(1.3); box-shadow: 0 0 30px var(--neon-blue); }
         
-        .btn-story {
-            background: linear-gradient(180deg, #334155, #0f172a);
-            border: none; padding: 14px 40px; color: #94a3b8; font-weight: 900;
-            text-transform: uppercase; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-            cursor: not-allowed; transition: all 0.2s; text-shadow: 0 1px 0px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1); position: relative;
+        .btn-locked {
+            background: linear-gradient(180deg, #1e293b, #0f172a); 
+            border: 1px solid rgba(255,255,255,0.05);
+            color: #475569; padding: 14px 40px; font-weight: 900; text-transform: uppercase;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            cursor: not-allowed; transition: all 0.2s;
         }
-        .btn-story::after { content: '🔒'; font-size: 12px; position: absolute; top: 5px; right: 5px; opacity: 0.5; }
+        .btn-locked:hover { color: #94a3b8; border-color: rgba(255,255,255,0.1); }
 
-        .btn-icon {
-            width: 44px; height: 44px; border: 1px solid #334155; background: #1e293b;
-            color: #94a3b8; font-size: 20px; border-radius: 6px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
-        }
-        .btn-icon:hover { border-color: var(--neon-blue); color: white; background: #334155; }
-        .tool-selected { border-color: #facc15; color: #facc15; box-shadow: 0 0 15px rgba(250, 204, 21, 0.2); transform: scale(1.1); z-index: 2; }
-
-        .armory-container { display: flex; gap: 40px; width: 90%; max-width: 1100px; height: 500px; }
-        .char-column { flex: 1; display: flex; flex-direction: column; gap: 15px; position: relative; }
+        /* ARMERIA */
+        .armory-layout { display: flex; width: 100%; height: 100%; }
         
-        .char-preview-box {
-            flex: 1; background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.3) 70%);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative; overflow: hidden;
+        .armory-sidebar { 
+            width: 380px; padding: 30px; padding-bottom: 150px; 
+            display: flex; flex-direction: column; gap: 20px; 
+            border-right: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); 
+            overflow-y: auto;
         }
-        .char-preview-box::before { content: ''; position: absolute; inset: 0; background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMTBoNDBWMEgwIiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNhKSIvPjwvc3ZnPg=='); opacity: 0.5; }
-        
-        .stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
-        .stat-name { font-size: 10px; color: #94a3b8; width: 50px; text-align: right; font-weight: bold; }
-        .stat-track { flex: 1; height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
-        .stat-fill { height: 100%; width: 50%; background: #3b82f6; transition: width 0.3s ease; box-shadow: 0 0 10px currentColor; }
+        /* Scrollbar personalizado */
+        .armory-sidebar::-webkit-scrollbar { width: 8px; }
+        .armory-sidebar::-webkit-scrollbar-track { background: #0f172a; }
+        .armory-sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; border: 1px solid #475569; }
+        .armory-sidebar::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
 
-        .input-group label { display: block; font-size: 9px; color: #cbd5e1; margin-bottom: 2px; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
-        select, input[type="color"], input[type="text"] {
-            width: 100%; padding: 10px 12px; background: rgba(2, 6, 23, 0.8); border: 1px solid #334155; 
-            color: white; border-radius: 6px; outline: none; font-size: 14px; font-family: 'Rajdhani', sans-serif;
-            transition: all 0.2s; cursor: pointer; text-transform: uppercase; font-weight: bold;
+        .armory-preview { flex: 1; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, #1e293b 0%, #000 80%); position: relative; }
+        
+        .tab-btn {
+            padding: 15px; font-family: 'Orbitron'; font-weight: bold; text-align: center; cursor: pointer;
+            background: #0f172a; border: 1px solid #334155; color: #64748b; transition: all 0.3s;
+            clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
         }
-        select:hover, input[type="text"]:hover { border-color: var(--neon-blue); background: rgba(15, 23, 42, 0.9); }
-        input[type="text"]:focus, select:focus { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); }
-        input[type="color"] { height: 40px; padding: 0; border: none; border-radius: 6px; overflow: hidden; }
+        .tab-btn.active-p1 { background: var(--neon-blue); color: white; box-shadow: 0 0 15px var(--neon-blue); border-color: white; }
+        .tab-btn.active-p2 { background: var(--neon-red); color: white; box-shadow: 0 0 15px var(--neon-red); border-color: white; }
 
-        .secret-panel { padding: 8px; border: 1px dashed #facc15; border-radius: 6px; background: rgba(250, 204, 21, 0.05); animation: pulse-border 2s infinite; display: none; }
-        .secret-panel.unlocked { display: block; }
-        @keyframes pulse-border { 0%{border-color:#facc15} 50%{border-color:#ca8a04} 100%{border-color:#facc15} }
+        .input-group label { display: block; font-size: 10px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
+        select, input[type="text"] {
+            width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; 
+            color: white; border-radius: 4px; outline: none; font-family: 'Rajdhani', sans-serif; font-weight: bold;
+            transition: all 0.2s; cursor: pointer;
+        }
+        select:focus, input[type="text"]:focus { border-color: white; background: #1e293b; }
+        input[type="color"] { width: 100%; height: 45px; border: none; border-radius: 4px; cursor: pointer; padding: 4px; background: #334155; }
 
-        .victory-anim { animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes zoomIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        
+        /* MODALES */
+        .modal-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.8); z-index: 100;
+            display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+        }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .terminal-input {
+            background: #111; border: 1px solid #fbbf24; color: #fbbf24; font-family: 'Orbitron'; 
+            padding: 15px; font-size: 1.2rem; text-align: center; outline: none; letter-spacing: 4px;
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+
         #toast-msg {
             position: absolute; top: 10%; left: 50%; transform: translateX(-50%) translateY(-20px);
             background: rgba(234, 179, 8, 0.95); color: #000; padding: 15px 40px;
@@ -103,9 +134,8 @@
             clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%, 0 20%);
         }
         #toast-msg.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+        .victory-anim { animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes zoomIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body onclick="AudioEngine.start()">
@@ -115,52 +145,67 @@
         <div id="toast-msg">¡PRÓXIMAMENTE!</div>
 
         <div id="menu-screen" class="ui-screen">
-            <h1 class="text-9xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 via-blue-600 to-purple-600 drop-shadow-[0_0_60px_rgba(6,182,212,0.6)] tracking-tighter italic">PIXEL ULTRA</h1>
-            <p class="mb-12 text-slate-300 tracking-[1.5em] font-bold text-xs uppercase border-t border-b border-slate-700 py-2">BETA </p>
-            <div class="flex flex-col gap-6 items-center">
-                <div class="flex gap-8">
-                    <button onclick="SFX.ui(); Game.goToSelect()" class="btn-neon text-2xl px-16 py-6 tracking-widest">VS. DUELO</button>
-                    <button onclick="SFX.ui(); Game.showStoryMsg()" class="btn-story text-2xl px-16 py-6 tracking-widest">MODO HISTORIA</button>
+            <div class="flex flex-col items-center justify-center relative z-10 w-full h-full">
+                <h1 class="title-anim text-9xl font-black mb-0 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 italic tracking-tighter p-4 text-center leading-tight">PIXEL ULTRA</h1>
+                
+                <div class="flex items-center gap-4 mb-16">
+                    <div class="h-px w-20 bg-slate-700"></div>
+                    <p class="text-slate-400 tracking-[1.5em] font-bold text-xs uppercase">BETA 2.7 - SAW UPDATE</p>
+                    <div class="h-px w-20 bg-slate-700"></div>
                 </div>
-                <div class="flex gap-6 mt-4">
-                    <button onclick="SFX.ui(); Game.goToCustom()" class="btn-neon bg-gradient-to-b from-purple-500 to-purple-900 px-10 py-3 text-sm border-purple-400" style="--neon-blue: #d946ef">ARMERÍA</button>
-                    <button onclick="SFX.ui(); Game.showStoryMsg()" class="btn-story px-10 py-3 text-sm">EDITOR DE MAPAS</button>
+
+                <div class="flex flex-col gap-6 items-center w-full max-w-md">
+                    <button onclick="SFX.ui(); Game.goToSelect()" class="btn-neon text-3xl px-20 py-6 tracking-widest w-full hover:scale-105 transition-transform">VS. DUELO</button>
+                    
+                    <button onclick="Game.showProximamente()" class="btn-locked w-full py-4 text-sm flex items-center justify-center gap-2">
+                        1 VS CPU
+                    </button>
+
+                    <div class="flex gap-4 w-full">
+                        <button onclick="SFX.ui(); Game.goToCustom()" class="btn-neon bg-gradient-to-b from-purple-500 to-purple-900 flex-1 py-4 text-sm border-purple-400" style="--neon-blue: #d946ef">ARMERÍA</button>
+                        <button onclick="Game.showProximamente()" class="btn-locked flex-1 py-4 text-sm flex items-center justify-center gap-2">
+                            <span>🔒</span> EDITOR
+                        </button>
+                    </div>
                 </div>
+
+                <button onclick="Game.openUpdateModal()" class="absolute bottom-8 right-8 text-slate-500 text-xs font-bold tracking-widest border border-slate-700 px-4 py-2 hover:bg-slate-800 hover:text-white transition-all flex items-center gap-2">
+                    <span>ⓘ</span> FUTURAS ACTUALIZACIONES
+                </button>
             </div>
         </div>
 
         <div id="select-screen" class="ui-screen hidden" style="background: rgba(2,6,23,0.3); flex-direction: row; justify-content: flex-start;">
             <div class="glass-panel h-full w-96 p-8 border-r border-white/5 z-10 flex flex-col">
                 <h2 class="text-4xl font-black mb-8 text-white tracking-widest border-b-2 border-cyan-500/50 pb-4">ARENAS</h2>
-                <div class="space-y-4 flex-1 overflow-y-auto custom-scroll pr-3">
-                    <button onmouseenter="Game.previewMap('neon'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('neon')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-cyan-900/60 border border-slate-700 hover:border-cyan-400 rounded-lg transition-all group relative overflow-hidden">
-                        <div class="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div class="font-bold text-xl text-cyan-300 group-hover:text-white relative z-10">NEON CITY</div>
-                        <div class="text-xs text-slate-400 relative z-10">Cyberpunk. Equilibrado.</div>
+                <div id="arena-list" class="space-y-4 flex-1 overflow-y-auto custom-scroll pr-3">
+                    
+                    <button onmouseenter="Game.previewMap('clash'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('clash')" class="w-full text-left p-5 bg-black/90 hover:bg-slate-900/90 border border-white/20 hover:border-white rounded-lg transition-all group overflow-hidden relative">
+                         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                         <div class="font-bold text-xl text-white glitch-text">CHOQUE DE REALIDADES</div> 
+                         <div class="text-xs text-slate-400">⚠️ Inestabilidad Extrema. Supervivencia.</div>
                     </button>
-                    <button onmouseenter="Game.previewMap('forest'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('forest')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-green-900/60 border border-slate-700 hover:border-green-400 rounded-lg transition-all group relative overflow-hidden">
-                        <div class="font-bold text-xl text-green-300 group-hover:text-white relative z-10">CYBER FOREST</div>
-                        <div class="text-xs text-slate-400 relative z-10">Naturaleza digital.</div>
-                    </button>
-                    <button onmouseenter="Game.previewMap('magma'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('magma')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-red-900/60 border border-slate-700 hover:border-red-500 rounded-lg transition-all group relative overflow-hidden">
-                        <div class="font-bold text-xl text-red-400 group-hover:text-white relative z-10">MAGMA CORE</div>
-                        <div class="text-xs text-slate-400 relative z-10">Volcán activo. Lava.</div>
-                    </button>
-                    <button onmouseenter="Game.previewMap('glacier'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('glacier')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-indigo-900/60 border border-slate-700 hover:border-indigo-400 rounded-lg transition-all group relative overflow-hidden">
-                        <div class="font-bold text-xl text-indigo-300 group-hover:text-white relative z-10">GLACIER</div>
-                        <div class="text-xs text-slate-400 relative z-10">Hielo. Plataformas móviles.</div>
-                    </button>
-                    <button onmouseenter="Game.previewMap('void'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('void')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-purple-900/60 border border-slate-700 hover:border-purple-400 rounded-lg transition-all group relative overflow-hidden">
-                        <div class="font-bold text-xl text-purple-300 group-hover:text-white relative z-10">THE VOID</div>
-                        <div class="text-xs text-slate-400 relative z-10">Experto. Mínimo suelo.</div>
-                    </button>
-                </div>
-                
-                <div class="mt-6 pt-6 border-t border-white/10 text-center relative overflow-hidden bg-black/40 rounded-lg p-4">
-                    <p class="text-xs text-yellow-500 font-black tracking-[0.2em] mb-1 animate-pulse">⚡ PRÓXIMAMENTE ⚡</p>
-                    <p class="text-[10px] text-slate-400 uppercase font-bold">Más Arenas & Modos de juego</p>
-                </div>
 
+                    <button onmouseenter="Game.previewMap('magma'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('magma')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-red-900/60 border border-slate-700 hover:border-red-500 rounded-lg transition-all">
+                        <div class="font-bold text-xl text-red-400">MAGMA CORE</div> <div class="text-xs text-slate-400">Elevadores y Lava.</div>
+                    </button>
+                    <button onmouseenter="Game.previewMap('void'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('void')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-purple-900/60 border border-slate-700 hover:border-purple-400 rounded-lg transition-all">
+                        <div class="font-bold text-xl text-purple-300">THE VOID</div> <div class="text-xs text-slate-400">Flotante.</div>
+                    </button>
+                    <button onmouseenter="Game.previewMap('forest'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('forest')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-green-900/60 border border-slate-700 hover:border-green-400 rounded-lg transition-all">
+                        <div class="font-bold text-xl text-green-300">CYBER FOREST</div> <div class="text-xs text-slate-400">Naturaleza digital.</div>
+                    </button>
+                    <button onmouseenter="Game.previewMap('neon'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('neon')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-cyan-900/60 border border-slate-700 hover:border-cyan-400 rounded-lg transition-all">
+                        <div class="font-bold text-xl text-cyan-300">NEON CITY</div> <div class="text-xs text-slate-400">Cyberpunk.</div>
+                    </button>
+                    <button onmouseenter="Game.previewMap('glacier'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('glacier')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-indigo-900/60 border border-slate-700 hover:border-indigo-400 rounded-lg transition-all">
+                        <div class="font-bold text-xl text-indigo-300">GLACIER</div> <div class="text-xs text-slate-400">Hielo.</div>
+                    </button>
+                    
+                    <button id="btn-secret-level" onclick="Game.openSecretModal()" class="w-full text-center p-3 bg-black/40 border border-dashed border-yellow-700 rounded-lg text-yellow-700 hover:text-yellow-500 hover:border-yellow-500 transition-all">
+                        <span class="text-sm font-bold tracking-widest">⚠️ ACCESO CLASIFICADO</span>
+                    </button>
+                </div>
                 <button onclick="SFX.ui(); Game.goToMenu()" class="mt-4 py-4 text-slate-500 hover:text-white tracking-widest font-bold transition-colors w-full border-t border-white/5 uppercase">← Volver al Menú</button>
             </div>
             <div class="flex-1 h-full pointer-events-none flex items-center justify-center relative">
@@ -168,92 +213,90 @@
             </div>
         </div>
 
-        <div id="custom-screen" class="ui-screen hidden">
-            <div class="flex justify-between items-center w-[90%] max-w-[1100px] mb-6 border-b-2 border-white/10 pb-4">
-                <h2 class="text-5xl font-black text-white tracking-wider">ARMERÍA</h2>
-                <div class="text-right">
-                    <div class="text-xs text-slate-400 uppercase tracking-widest">Estado del Sistema</div>
-                    <div class="text-emerald-400 font-bold">ONLINE</div>
+        <div id="update-modal" class="modal-overlay">
+            <div class="glass-panel w-[600px] p-8 border-t-4 border-t-cyan-500 flex flex-col gap-4">
+                <h2 class="text-2xl font-black text-cyan-400 mb-4 border-b border-white/10 pb-2">HOJA DE RUTA (ROADMAP)</h2>
+                <div class="space-y-4 font-mono text-sm text-slate-300 h-64 overflow-y-auto custom-scroll pr-2">
+                     <div class="mb-4">
+                        <strong class="text-white block text-lg mb-1">PRÓXIMAMENTE MÁS ARENAS:</strong>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-400">
+                            <li><span class="text-yellow-400">Sky Sanctuary:</span> Plataformas flotantes con gravedad reducida y viento fuerte.</li>
+                            <li><span class="text-green-400">Acid Factory:</span> Cintas transportadoras y ácido corrosivo que sube y baja.</li>
+                            <li><span class="text-blue-400">Time Warp:</span> El tiempo se congela aleatoriamente.</li>
+                        </ul>
+                     </div>
+                     <div class="mb-4">
+                        <strong class="text-white block text-lg mb-1">MODOS DE JUEGO:</strong>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-400">
+                            <li><span class="text-white">1 VS CPU:</span> Entrena contra una IA avanzada.</li>
+                            <li><span class="text-white">COOPERATIVO:</span> (Coming Soon) Sobrevive oleadas de enemigos con un amigo.</li>
+                            <li><span class="text-white">MODO EDITOR:</span> Crea y comparte tus propios niveles.</li>
+                        </ul>
+                     </div>
+                     <div class="mb-4">
+                        <strong class="text-white block text-lg mb-1">EXTRAS:</strong>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-400">
+                            <li>Nuevos cosméticos (Skins, armas, efectos).</li>
+                            <li>Disponible próximamente en <span class="text-white">Android / iOS</span>.</li>
+                        </ul>
+                     </div>
                 </div>
-            </div>
-
-            <div class="armory-container">
-                <div class="char-column glass-panel p-6 border-t-4 border-t-cyan-500">
-                    <div class="flex justify-between items-end mb-2">
-                        <h3 class="text-2xl font-black text-cyan-400 italic">JUGADOR 01</h3>
-                        <input type="text" id="p1-n" value="CYBER 01" maxlength="12" class="w-32 text-right !bg-transparent !border-0 !p-0 focus:!ring-0 text-cyan-200">
-                    </div>
-                    
-                    <div class="char-preview-box group cursor-pointer" onclick="Game.unlockSecret(1, event)">
-                        <canvas id="p1-preview" width="200" height="200" class="relative z-10 transition-transform group-hover:scale-110 duration-500"></canvas>
-                        <div class="absolute bottom-2 text-[9px] text-cyan-500/50 font-mono">MODEL: MK-IV // CLICK HEAD -> ???</div>
-                    </div>
-
-                    <div id="p1-stats" class="bg-black/40 p-3 rounded-lg mb-2">
-                        <div class="stat-row"><span class="stat-name">ATK</span><div class="stat-track"><div id="p1-stat-atk" class="stat-fill" style="width: 50%; background: #f87171;"></div></div></div>
-                        <div class="stat-row"><span class="stat-name">DEF</span><div class="stat-track"><div id="p1-stat-def" class="stat-fill" style="width: 50%; background: #60a5fa;"></div></div></div>
-                        <div class="stat-row"><span class="stat-name">SPD</span><div class="stat-track"><div id="p1-stat-spd" class="stat-fill" style="width: 50%; background: #fbbf24;"></div></div></div>
-                    </div>
-
-                    <div id="p1-secrets" class="secret-panel mb-2"><div class="text-[10px] font-bold text-yellow-400 text-center mb-1">¡PROTOCOLO RONIN ACTIVO!</div><label class="checkbox-label justify-center"><input type="checkbox" id="p1-ronin" onchange="Game.updatePreviews()"> Armadura Ronin</label></div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="input-group"><label>Color</label><input type="color" id="p1-c" value="#06b6d4" oninput="Game.updatePreviews()"></div>
-                        <div class="input-group"><label>Casco</label><select id="p1-h" onchange="Game.updatePreviews()"><option value="none">---</option><option value="tactical">Tactical</option><option value="oni">Oni</option><option value="viking">Viking</option><option value="samurai">Samurai</option><option value="skull">Skull</option><option value="cyclops">Cyclops</option><option value="hood">Hood</option><option value="pilot">Pilot</option><option value="demon">Demon</option></select></div>
-                        <div class="input-group"><label>Armadura</label><select id="p1-a" onchange="Game.updatePreviews()"><option value="none">Standard</option><option value="heavy">Heavy</option><option value="stealth">Stealth</option><option value="knight">Knight</option><option value="nano">Nano</option><option value="juggernaut">Juggernaut</option><option value="cyberninja">Cyber-Ninja</option></select></div>
-                        <div class="input-group"><label>Dorsal</label><select id="p1-b" onchange="Game.updatePreviews()"><option value="none">---</option><option value="cape">Cape</option><option value="wings">Wings</option><option value="jetpack">Jetpack</option><option value="battery">Battery</option><option value="spider">Spider Legs</option><option value="halo">Halo</option></select></div>
-                        <div class="input-group col-span-2"><label>Arma</label><select id="p1-w" onchange="Game.updatePreviews()"><option value="sword">Energy Sword</option><option value="katana">Nanocarbon Katana</option><option value="scythe">Void Scythe</option><option value="hammer">Gravity Hammer</option><option value="spear">Laser Spear</option><option value="daggers">Dual Daggers</option><option value="laseraxe">Laser Axe</option><option value="whip">Plasma Whip</option><option value="fists">Power Fists</option></select></div>
-                    </div>
-                </div>
-
-                <div class="char-column glass-panel p-6 border-t-4 border-t-red-500">
-                    <div class="flex justify-between items-end mb-2">
-                        <h3 class="text-2xl font-black text-red-400 italic">JUGADOR 02</h3>
-                        <input type="text" id="p2-n" value="SLAYER 02" maxlength="12" class="w-32 text-right !bg-transparent !border-0 !p-0 focus:!ring-0 text-red-200">
-                    </div>
-                    
-                    <div class="char-preview-box group cursor-pointer" onclick="Game.unlockSecret(2, event)">
-                        <canvas id="p2-preview" width="200" height="200" class="relative z-10 transition-transform group-hover:scale-110 duration-500"></canvas>
-                        <div class="absolute bottom-2 text-[9px] text-red-500/50 font-mono">MODEL: MK-IV // CLICK HEAD -> ???</div>
-                    </div>
-
-                    <div id="p2-stats" class="bg-black/40 p-3 rounded-lg mb-2">
-                        <div class="stat-row"><span class="stat-name">ATK</span><div class="stat-track"><div id="p2-stat-atk" class="stat-fill" style="width: 50%; background: #f87171;"></div></div></div>
-                        <div class="stat-row"><span class="stat-name">DEF</span><div class="stat-track"><div id="p2-stat-def" class="stat-fill" style="width: 50%; background: #60a5fa;"></div></div></div>
-                        <div class="stat-row"><span class="stat-name">SPD</span><div class="stat-track"><div id="p2-stat-spd" class="stat-fill" style="width: 50%; background: #fbbf24;"></div></div></div>
-                    </div>
-
-                    <div id="p2-secrets" class="secret-panel mb-2"><div class="text-[10px] font-bold text-yellow-400 text-center mb-1">¡PROTOCOLO RONIN ACTIVO!</div><label class="checkbox-label justify-center"><input type="checkbox" id="p2-ronin" onchange="Game.updatePreviews()"> Armadura Ronin</label></div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="input-group"><label>Color</label><input type="color" id="p2-c" value="#ef4444" oninput="Game.updatePreviews()"></div>
-                        <div class="input-group"><label>Casco</label><select id="p2-h" onchange="Game.updatePreviews()"><option value="none">---</option><option value="tactical">Tactical</option><option value="oni">Oni</option><option value="viking">Viking</option><option value="samurai">Samurai</option><option value="skull">Skull</option><option value="cyclops">Cyclops</option><option value="hood">Hood</option><option value="pilot">Pilot</option><option value="demon">Demon</option></select></div>
-                        <div class="input-group"><label>Armadura</label><select id="p2-a" onchange="Game.updatePreviews()"><option value="none">Standard</option><option value="heavy">Heavy</option><option value="stealth">Stealth</option><option value="knight">Knight</option><option value="nano">Nano</option><option value="juggernaut">Juggernaut</option><option value="cyberninja">Cyber-Ninja</option></select></div>
-                        <div class="input-group"><label>Dorsal</label><select id="p2-b" onchange="Game.updatePreviews()"><option value="none">---</option><option value="cape">Cape</option><option value="wings">Wings</option><option value="jetpack">Jetpack</option><option value="battery">Battery</option><option value="spider">Spider Legs</option><option value="halo">Halo</option></select></div>
-                        <div class="input-group col-span-2"><label>Arma</label><select id="p2-w" onchange="Game.updatePreviews()"><option value="sword">Energy Sword</option><option value="katana">Nanocarbon Katana</option><option value="scythe">Void Scythe</option><option value="hammer">Gravity Hammer</option><option value="spear">Laser Spear</option><option value="daggers">Dual Daggers</option><option value="laseraxe">Laser Axe</option><option value="whip">Plasma Whip</option><option value="fists">Power Fists</option></select></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex gap-6 mt-8 justify-center">
-                <button onclick="SFX.ui(); Game.saveAndExit()" class="btn-neon text-lg px-12">CONFIRMAR EQUIPO</button>
-                <button onclick="SFX.ui(); Game.goToMenu()" class="px-8 py-4 text-slate-400 hover:text-white font-bold transition-colors uppercase tracking-widest">Descartar</button>
+                <button onclick="Game.closeUpdateModal()" class="mt-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded uppercase w-full">CERRAR</button>
             </div>
         </div>
 
-        <div id="editor-hud" class="absolute bottom-0 w-full glass-panel p-3 border-t border-white/10 flex items-center gap-3 hidden z-30">
-            <div class="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700">
-                <button onclick="Editor.setTool(1); SFX.ui()" id="tool-1" class="btn-icon tool-selected" title="Bloque Sólido">⬜</button>
-                <button onclick="Editor.setTool(4); SFX.ui()" id="tool-4" class="btn-icon" title="Plataforma">☰</button>
-                <button onclick="Editor.setTool(3); SFX.ui()" id="tool-3" class="btn-icon text-red-500" title="Pincho (Rotar)">▲</button>
-                <button onclick="Editor.setTool(5); SFX.ui()" id="tool-5" class="btn-icon text-orange-500" title="Lava">≈</button>
+        <div id="secret-modal" class="modal-overlay">
+            <div class="glass-panel w-[500px] p-8 border-t-4 border-t-yellow-500 flex flex-col gap-4">
+                <h2 class="text-2xl font-black text-yellow-500 text-center tracking-widest uppercase border-b border-yellow-900 pb-2">Terminal de Seguridad</h2>
+                <p class="text-xs text-yellow-700 font-mono text-center">INGRESE CREDENCIALES DE NIVEL 5</p>
+                <input type="text" id="secret-pass" class="terminal-input" placeholder="CONTRASEÑA..." autocomplete="off">
+                <div id="secret-hint" class="text-xs text-red-500 font-mono h-4 text-center"></div>
+                <div class="flex gap-4">
+                    <button onclick="Game.checkSecret()" class="flex-1 btn-neon text-sm bg-yellow-900/50 border-yellow-500 text-yellow-500" style="--neon-blue: #f59e0b">ACCEDER</button>
+                    <button onclick="Game.closeSecretModal()" class="flex-1 btn-story text-sm">CANCELAR</button>
+                </div>
             </div>
-            <div class="w-px h-10 bg-white/20"></div>
-            <button onclick="Editor.setTool(0); SFX.ui()" id="tool-0" class="btn-icon text-slate-500 border-dashed hover:text-red-400 hover:border-red-400" title="Borrador">✕</button>
-            <div class="flex-1"></div>
-            <button onclick="SFX.ui(); Game.testLevel()" id="btn-test" class="btn-neon py-2 px-6 text-sm bg-gradient-to-r from-yellow-500 to-orange-500" style="--neon-blue: #f59e0b">PROBAR</button>
-            <button onclick="SFX.ui(); Editor.clear()" class="px-4 py-2 text-red-400 hover:text-red-300 font-bold rounded-md ml-4">LIMPIAR</button>
-            <button onclick="SFX.ui(); Game.goToMenu()" class="px-4 py-2 text-slate-400 hover:text-white font-bold">SALIR</button>
+        </div>
+
+        <div id="custom-screen" class="ui-screen hidden">
+            <div class="glass-panel w-[90%] h-[85%] flex flex-col relative overflow-hidden">
+                <div class="flex border-b border-white/10">
+                    <div id="tab-p1" onclick="Armory.switchPlayer(1)" class="tab-btn flex-1 active-p1">JUGADOR 1 (CYBER)</div>
+                    <div id="tab-p2" onclick="Armory.switchPlayer(2)" class="tab-btn flex-1">JUGADOR 2 (SLAYER)</div>
+                </div>
+
+                <div class="armory-layout">
+                    <div class="armory-sidebar custom-scroll">
+                        <div class="mb-4">
+                            <label class="text-slate-400 text-xs font-bold">NOMBRE DE COMBATE</label>
+                            <input type="text" id="arm-name" class="mt-1 text-lg" oninput="Armory.updateCurrent()">
+                        </div>
+                        
+                        <div class="h-px bg-white/10 my-2"></div>
+
+                        <div class="flex flex-col gap-6">
+                            <div class="input-group"><label>Color del Núcleo</label><input type="color" id="arm-color" oninput="Armory.updateCurrent()"></div>
+                            <div class="input-group"><label>Casco Táctico</label><select id="arm-helmet" onchange="Armory.updateCurrent()"><option value="none">Sin Casco</option><option value="tactical">Tactical Visor</option><option value="oni">Oni Mask</option><option value="viking">Cyber Viking</option><option value="samurai">Samurai Helmet</option><option value="skull">Reaper Skull</option><option value="cyclops">Mono-Eye</option><option value="hood">Assassin Hood</option><option value="pilot">Ace Pilot</option><option value="demon">Void Demon</option></select></div>
+                            <div class="input-group"><label>Placa de Pecho</label><select id="arm-armor" onchange="Armory.updateCurrent()"><option value="none">Standard Issue</option><option value="heavy">Heavy Plating</option><option value="stealth">Stealth Suit</option><option value="knight">Neo-Knight</option><option value="nano">Nano Fiber</option><option value="juggernaut">Juggernaut</option><option value="cyberninja">Cyber-Ninja</option></select></div>
+                            <div class="input-group"><label>Equipo Dorsal</label><select id="arm-back" onchange="Armory.updateCurrent()"><option value="none">---</option><option value="cape">Nano Cape</option><option value="wings">Energy Wings</option><option value="jetpack">Thruster Pack</option><option value="battery">Power Cell</option><option value="spider">Mech Legs</option><option value="halo">Angel Halo</option></select></div>
+                            <div class="input-group"><label>Arma Principal</label><select id="arm-weapon" onchange="Armory.updateCurrent()"><option value="sword">Energy Sword</option><option value="katana">Nanocarbon Katana</option><option value="scythe">Void Scythe</option><option value="hammer">Gravity Hammer</option><option value="spear">Laser Spear</option><option value="daggers">Dual Daggers</option><option value="laseraxe">Laser Axe</option><option value="whip">Plasma Whip</option><option value="fists">Power Fists</option></select></div>
+                        </div>
+                    </div>
+
+                    <div class="armory-preview">
+                        <div class="absolute top-4 right-4 text-right">
+                            <div class="text-xs text-slate-500 font-mono tracking-widest">VISTA PREVIA</div>
+                            <div class="text-2xl font-black text-white" id="preview-name-display">NOMBRE</div>
+                        </div>
+                        <canvas id="armory-canvas" width="500" height="500"></canvas>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-0 w-full p-4 border-t border-white/10 bg-black/80 backdrop-blur-md flex justify-between items-center z-10 shadow-2xl">
+                    <button onclick="SFX.ui(); Game.goToMenu()" class="text-slate-400 hover:text-white font-bold px-6 uppercase tracking-widest transition-colors">Descartar</button>
+                    <button onclick="SFX.ui(); Game.saveAndExit()" class="btn-neon px-12 py-3 text-lg">CONFIRMAR EQUIPO</button>
+                </div>
+            </div>
         </div>
 
         <div id="game-hud" class="absolute top-0 w-full p-8 flex justify-between hidden pointer-events-none z-30">
@@ -261,7 +304,14 @@
                 <div class="flex justify-between text-cyan-400 font-black text-lg mb-2 tracking-wider"><span id="p1-name-hud" class="drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]">JUGADOR 1</span><span id="hp-txt-1">100%</span></div>
                 <div class="h-6 bg-slate-900/80 rounded-sm border-2 border-cyan-500/50 overflow-hidden relative shadow-[0_0_20px_rgba(6,182,212,0.3)]"><div id="hp-bar-1" class="h-full bg-gradient-to-r from-cyan-400 to-blue-600 w-full transition-all duration-200"></div></div>
             </div>
-            <button onclick="SFX.ui(); Game.goToMenu()" class="pointer-events-auto px-6 py-2 bg-black/40 text-white/40 hover:bg-red-900/80 hover:text-white rounded border border-white/10 text-xs font-bold transition-all backdrop-blur-sm">ABANDONAR</button>
+            <div class="flex flex-col items-center">
+                <button onclick="SFX.ui(); Game.goToMenu()" class="pointer-events-auto px-6 py-2 bg-black/40 text-white/40 hover:bg-red-900/80 hover:text-white rounded border border-white/10 text-xs font-bold transition-all backdrop-blur-sm">ABANDONAR</button>
+                <div id="clash-timer-hud" class="text-white font-mono font-bold mt-2 text-xs opacity-0 transition-opacity text-shadow-red glitch-text">CAMBIO: 15s</div>
+                <div id="clash-mode-hud" class="text-red-500 font-black text-sm mt-1 opacity-0">MODO NORMAL</div>
+                <div id="final-warning" class="hidden text-3xl font-black text-red-600 absolute top-20 text-center w-[600px] alert-pulse bg-black/80 p-6 border-2 border-red-600 rounded-xl z-50">
+                    ¡ADVERTENCIA!<br>COLAPSO DE REALIDAD EN CURSO
+                </div>
+            </div>
             <div class="w-1/3">
                 <div class="flex justify-between text-red-400 font-black text-lg mb-2 tracking-wider"><span id="p2-name-hud" class="drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]">JUGADOR 2</span><span id="hp-txt-2">100%</span></div>
                 <div class="h-6 bg-slate-900/80 rounded-sm border-2 border-red-500/50 overflow-hidden relative shadow-[0_0_20px_rgba(239,68,68,0.3)]"><div id="hp-bar-2" class="h-full bg-gradient-to-l from-red-500 to-orange-600 w-full transition-all duration-200 float-right"></div></div>
@@ -281,94 +331,206 @@
     </div>
 
     <script>
-        // MOTOR DE AUDIO (SOLO SFX)
         const AudioEngine={ctx:null,isEnabled:false,masterGain:null,
-            start:()=>{
-                if(!AudioEngine.ctx){
-                    AudioEngine.ctx=new(window.AudioContext||window.webkitAudioContext)();
-                    AudioEngine.isEnabled=true;
-                    AudioEngine.masterGain=AudioEngine.ctx.createGain();
-                    AudioEngine.masterGain.gain.value=0.4;
-                    AudioEngine.masterGain.connect(AudioEngine.ctx.destination);
-                }
-                if(AudioEngine.ctx.state==='suspended')AudioEngine.ctx.resume();
+            start:()=>{if(!AudioEngine.ctx){AudioEngine.ctx=new(window.AudioContext||window.webkitAudioContext)();AudioEngine.isEnabled=true;AudioEngine.masterGain=AudioEngine.ctx.createGain();AudioEngine.masterGain.gain.value=0.3;AudioEngine.masterGain.connect(AudioEngine.ctx.destination);}if(AudioEngine.ctx.state==='suspended')AudioEngine.ctx.resume();},
+            playTone:(f,t,d,v=0.1)=>{if(!AudioEngine.isEnabled)return;const o=AudioEngine.ctx.createOscillator(),g=AudioEngine.ctx.createGain();o.type=t;o.frequency.setValueAtTime(f,AudioEngine.ctx.currentTime);g.gain.setValueAtTime(v,AudioEngine.ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.01,AudioEngine.ctx.currentTime+d);o.connect(g);g.connect(AudioEngine.masterGain);o.start();o.stop(AudioEngine.ctx.currentTime+d);},
+            sfx:{jump:()=>AudioEngine.playTone(150,'sine',0.2,0.1),hit:()=>AudioEngine.playTone(80,'sawtooth',0.1,0.2),slash:()=>AudioEngine.playTone(400,'triangle',0.1,0.05),ui:()=>AudioEngine.playTone(800,'sine',0.05,0.05),unlock:()=>AudioEngine.playTone(1000,'square',0.5,0.1),win:()=>{setTimeout(()=>AudioEngine.playTone(300,'square',0.5,0.1),0);setTimeout(()=>AudioEngine.playTone(500,'square',1.0,0.1),400);},
+            warp:()=>AudioEngine.playTone(100,'sawtooth',0.8,0.15),
+            collapse:()=>{
+                 AudioEngine.playTone(50, 'sawtooth', 3.0, 0.4);
+                 setTimeout(()=>AudioEngine.playTone(40, 'square', 2.0, 0.3), 500);
+            }}
+        };
+        const SFX={ui:AudioEngine.sfx.ui,hover:()=>{},win:AudioEngine.sfx.win, warp:AudioEngine.sfx.warp, collapse:AudioEngine.sfx.collapse};
+        
+        const canvas=document.getElementById('gameCanvas');const ctx=canvas.getContext('2d');
+        const TILE=40,COLS=32,ROWS=18,GRAVITY=0.6,FRICTION=0.85,JUMP_FORCE=-13.5,MOVE_SPEED=0.45,MAX_SPEED=3.5; 
+        let state='MENU',grid=[],entities=[],movingPlats=[],particles=[],environmentParticles=[],menuParticles=[],keys={},mouse={x:0,y:0,down:false},frame=0,currentMap='neon';
+        let p1Config={name:'CYBER 01',color:'#06b6d4',helmet:'none',armor:'none',back:'none',weapon:'sword'};
+        let p2Config={name:'SLAYER 02',color:'#dc2626',helmet:'none',armor:'none',back:'none',weapon:'katana'};
+        let secretAttempts = 0; const SECRET_PASS = "OARRAPFM23122011";
+
+        // VARIABLES PARA MODO CLASH
+        let clashTimer = 0;
+        let clashBiome = 'base'; // base, magma_c, forest_c, neon_c, void_c, final_collapse
+        let clashFlashAlpha = 0;
+        let clashCycleCount = 0; 
+        let isFinalCollapse = false;
+        let longTransition = false;
+        const CLASH_INTERVAL = 900; // 15s
+        let sawBlade = null; // Para la sierra del nivel final
+
+        // LISTAS DE COSMETICOS PARA ALEATORIZAR
+        const COSMETICS = {
+            helmets: ['none', 'tactical', 'oni', 'viking', 'samurai', 'skull', 'cyclops', 'hood', 'pilot', 'demon'],
+            armors: ['none', 'heavy', 'stealth', 'knight', 'nano', 'juggernaut', 'cyberninja'],
+            backs: ['none', 'cape', 'wings', 'jetpack', 'battery', 'spider', 'halo'],
+            weapons: ['sword', 'katana', 'scythe', 'hammer', 'spear', 'daggers', 'laseraxe', 'whip', 'fists']
+        };
+
+        const Armory = {
+            currentPlayer: 1,
+            init: () => { Armory.switchPlayer(1); },
+            switchPlayer: (id) => {
+                Armory.currentPlayer = id;
+                document.getElementById('tab-p1').className = id === 1 ? 'tab-btn flex-1 active-p1' : 'tab-btn flex-1';
+                document.getElementById('tab-p2').className = id === 2 ? 'tab-btn flex-1 active-p2' : 'tab-btn flex-1';
+                const cfg = id === 1 ? p1Config : p2Config;
+                document.getElementById('arm-name').value = cfg.name;
+                document.getElementById('arm-color').value = cfg.color;
+                document.getElementById('arm-helmet').value = cfg.helmet;
+                document.getElementById('arm-armor').value = cfg.armor;
+                document.getElementById('arm-back').value = cfg.back;
+                document.getElementById('arm-weapon').value = cfg.weapon;
+                Armory.updatePreview();
             },
-            playTone:(freq,type,dur,vol=0.1)=>{
-                if(!AudioEngine.isEnabled)return;
-                const o=AudioEngine.ctx.createOscillator(),g=AudioEngine.ctx.createGain();
-                o.type=type;o.frequency.setValueAtTime(freq,AudioEngine.ctx.currentTime);
-                g.gain.setValueAtTime(vol,AudioEngine.ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.01,AudioEngine.ctx.currentTime+dur);
-                o.connect(g);g.connect(AudioEngine.masterGain);o.start();o.stop(AudioEngine.ctx.currentTime+dur);
+            updateCurrent: () => {
+                const cfg = Armory.currentPlayer === 1 ? p1Config : p2Config;
+                cfg.name = document.getElementById('arm-name').value;
+                cfg.color = document.getElementById('arm-color').value;
+                cfg.helmet = document.getElementById('arm-helmet').value;
+                cfg.armor = document.getElementById('arm-armor').value;
+                cfg.back = document.getElementById('arm-back').value;
+                cfg.weapon = document.getElementById('arm-weapon').value;
+                Armory.updatePreview();
             },
-            // MÚSICA ELIMINADA
-            startMusic:()=>{}, 
-            stopMusic:()=>{},
-            sfx:{
-                jump:()=>AudioEngine.playTone(150,'sine',0.2,0.1),
-                hit:()=>AudioEngine.playTone(80,'sawtooth',0.1,0.2),
-                slash:()=>AudioEngine.playTone(400,'triangle',0.1,0.05),
-                ui:()=>AudioEngine.playTone(800,'sine',0.05,0.05),
-                unlock:()=>AudioEngine.playTone(1000,'square',0.5,0.1),
-                win:()=>{setTimeout(()=>AudioEngine.playTone(300,'square',0.5,0.1),0);setTimeout(()=>AudioEngine.playTone(400,'square',0.5,0.1),200);setTimeout(()=>AudioEngine.playTone(500,'square',1.0,0.1),400);}
+            updatePreview: () => {
+                const cfg = Armory.currentPlayer === 1 ? p1Config : p2Config;
+                document.getElementById('preview-name-display').innerText = cfg.name;
+                document.getElementById('preview-name-display').style.color = cfg.color;
+                const pCtx = document.getElementById('armory-canvas').getContext('2d');
+                pCtx.clearRect(0,0,500,500);
+                pCtx.save();
+                pCtx.translate(250, 250); 
+                pCtx.scale(8, 8); 
+                pCtx.translate(-11, -21); 
+                drawCharacterDetailed(pCtx, 0, 0, true, cfg.color, cfg);
+                pCtx.restore();
+            },
+            randomizeCharacter: (cfg) => {
+                cfg.helmet = COSMETICS.helmets[Math.floor(Math.random() * COSMETICS.helmets.length)];
+                cfg.armor = COSMETICS.armors[Math.floor(Math.random() * COSMETICS.armors.length)];
+                cfg.back = COSMETICS.backs[Math.floor(Math.random() * COSMETICS.backs.length)];
+                cfg.weapon = COSMETICS.weapons[Math.floor(Math.random() * COSMETICS.weapons.length)];
             }
         };
-        const SFX={ui:AudioEngine.sfx.ui,hover:()=>{},win:AudioEngine.sfx.win};
-        const canvas=document.getElementById('gameCanvas');const ctx=canvas.getContext('2d');const TILE=40,COLS=32,ROWS=18,GRAVITY=0.6,FRICTION=0.85,JUMP_FORCE=-13.5,MOVE_SPEED=0.35,MAX_SPEED=2.8; 
-        let state='MENU',grid=[],entities=[],movingPlats=[],particles=[],keys={},mouse={x:0,y:0,down:false},frame=0,currentMap='neon';
-        let p1Config={name:'CYBER 01',color:'#06b6d4',helmet:'none',armor:'none',back:'none',weapon:'sword',rgb:false,ronin:false};
-        let p2Config={name:'SLAYER 02',color:'#dc2626',helmet:'none',armor:'none',back:'none',weapon:'katana',rgb:false,ronin:false};
-        let bgElements = [];
+
+        class SawBlade {
+            constructor(x, y) {
+                this.x = x * TILE;
+                this.y = y * TILE;
+                this.radius = 50;
+                this.angle = 0;
+                this.speedX = 4;
+                this.minX = 10 * TILE;
+                this.maxX = 22 * TILE;
+            }
+            update() {
+                this.x += this.speedX;
+                this.angle += 0.2;
+                if (this.x > this.maxX || this.x < this.minX) this.speedX *= -1;
+                
+                // Daño a jugadores
+                entities.forEach(e => {
+                    let dx = (e.x + e.w/2) - this.x;
+                    let dy = (e.y + e.h/2) - this.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < this.radius + 15) { // Hitbox un poco generosa
+                        e.hit(10);
+                        e.vx = (dx > 0 ? 10 : -10);
+                        e.vy = -5;
+                    }
+                });
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = '#4ade80'; // Green neon
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                for(let i=0; i<8; i++) {
+                    ctx.lineTo(Math.cos(i * Math.PI / 4) * this.radius, Math.sin(i * Math.PI / 4) * this.radius);
+                    ctx.lineTo(Math.cos((i * Math.PI / 4) + 0.2) * (this.radius - 15), Math.sin((i * Math.PI / 4) + 0.2) * (this.radius - 15));
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                // Eje central
+                ctx.fillStyle = '#000';
+                ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2); ctx.fill();
+                ctx.restore();
+            }
+        }
 
         class Player{
-            constructor(id,x,y,cfg){this.id=id;this.x=x;this.y=y;this.config=cfg;this.w=22;this.h=42;this.vx=0;this.vy=0;this.hp=100;this.grounded=false;this.facingRight=id===1;this.stun=0;this.atkCd=0;this.animFrame=0;
-            this.ctrl=id===1?{l:'a',r:'d',u:'w',atk:' '}:{l:'arrowleft',r:'arrowright',u:'arrowup',atk:'enter'};}
+            constructor(id,x,y,cfg){this.id=id;this.x=x;this.y=y;this.config=cfg;this.w=22;this.h=42;this.vx=0;this.vy=0;this.hp=100;this.grounded=false;this.facingRight=id===1;this.stun=0;this.atkCd=0;this.animFrame=0;this.climbing=false;
+            this.ctrl=id===1?{l:'a',r:'d',u:'w',d:'s',atk:' '}:{l:'arrowleft',r:'arrowright',u:'arrowup',d:'arrowdown',atk:'enter'};}
             update(){
-                if(this.hp<=0)return; let inLava=Physics.checkLava(this);
+                if(this.hp<=0)return; 
+                let currentGravity = GRAVITY;
+                let currentSpeed = MOVE_SPEED;
+                if(currentMap === 'clash') {
+                    if(clashBiome === 'void_c') currentGravity = GRAVITY * 0.5; 
+                    if(clashBiome === 'neon_c') currentSpeed = MOVE_SPEED * 1.5; 
+                }
+                let inLava=Physics.checkLava(this); 
+                let onLadder=Physics.checkLadder(this);
+                if(onLadder && (keys[this.ctrl.u] || keys[this.ctrl.d])) this.climbing = true;
+                if(!onLadder) this.climbing = false;
                 if(this.stun<=0){
-                    if(keys[this.ctrl.l]){this.vx-=MOVE_SPEED;this.facingRight=false;this.animFrame++;}
-                    if(keys[this.ctrl.r]){this.vx+=MOVE_SPEED;this.facingRight=true;this.animFrame++;}
-                    if(keys[this.ctrl.u]){if(this.grounded){this.vy=JUMP_FORCE;this.grounded=false;AudioEngine.sfx.jump();}else if(inLava){this.vy=-7;AudioEngine.sfx.jump();}}
+                    if(keys[this.ctrl.l]){this.vx-=currentSpeed;this.facingRight=false;this.animFrame++;}
+                    if(keys[this.ctrl.r]){this.vx+=currentSpeed;this.facingRight=true;this.animFrame++;}
+                    if(this.climbing){
+                        this.vx*=0.5; this.vy=0;
+                        if(keys[this.ctrl.u]) { let cx=Math.floor((this.x+this.w/2)/TILE); let cyAbove=Math.floor((this.y)/TILE); if(grid[cx]&&grid[cx][cyAbove]!==6){this.vy=JUMP_FORCE; this.climbing=false; this.grounded=false; AudioEngine.sfx.jump();} else {this.vy=-3;} }
+                        if(keys[this.ctrl.d])this.vy=3; this.grounded=true; 
+                    } else {
+                        if(keys[this.ctrl.u]){if(this.grounded){this.vy=JUMP_FORCE;this.grounded=false;AudioEngine.sfx.jump();this.spawnJumpDust();}else if(inLava){this.vy=-7;AudioEngine.sfx.jump();}}
+                    }
                     if(keys[this.ctrl.atk]&&this.atkCd<=0)this.attack();
                 }else this.stun--;
                 if(this.atkCd>0)this.atkCd--;
-                if(inLava){this.vx*=0.6;this.vy*=0.6;if(frame%30===0)this.hit(2);}else{this.vy+=GRAVITY;this.vx*=FRICTION;}
-                this.vx=Math.max(Math.min(this.vx,MAX_SPEED),-MAX_SPEED); this.x+=this.vx; Physics.collideX(this); this.y+=this.vy; Physics.collideY(this); Physics.checkSpikes(this); if(this.y>750)this.hit(100);
+                if(inLava){this.vx*=0.6;this.vy*=0.6; if(frame%30===0) this.hit(2);}
+                else if(!this.climbing){this.vy+=currentGravity;this.vx*=FRICTION;}
+                this.vx=Math.max(Math.min(this.vx,MAX_SPEED*1.5),-MAX_SPEED*1.5); 
+                this.x+=this.vx; Physics.collideX(this); this.y+=this.vy; Physics.collideY(this); 
+                Physics.checkSpikes(this); if(this.y>750)this.hit(100);
             }
-            attack(){this.atkCd=40;AudioEngine.sfx.slash();let range=65;let hx=this.facingRight?this.x+this.w:this.x-range;particles.push({x:hx+(this.facingRight?0:range),y:this.y+20,color:this.config.color,life:10,size:2,isSlash:true});let enemy=entities.find(e=>e.id!==this.id);if(enemy&&enemy.hp>0&&hx<enemy.x+enemy.w&&hx+range>enemy.x&&Math.abs(this.y-enemy.y)<45){enemy.hit(12);enemy.vx=this.facingRight?7:-7;enemy.vy=-6;}}
+            spawnJumpDust(){for(let i=0;i<5;i++) particles.push({x:this.x+10, y:this.y+40, vx:(Math.random()-0.5)*3, vy:(Math.random()-0.5), color:'#fff', life:15, size:Math.random()*3});}
+            attack(){this.atkCd=40;AudioEngine.sfx.slash();let range=70;let hx=this.facingRight?this.x+this.w:this.x-range;particles.push({x:hx+(this.facingRight?0:range),y:this.y+20,color:this.config.color,life:10,size:2,isSlash:true});let enemy=entities.find(e=>e.id!==this.id);if(enemy&&enemy.hp>0&&hx<enemy.x+enemy.w&&hx+range>enemy.x&&Math.abs(this.y-enemy.y)<50){enemy.hit(10);enemy.vx=this.facingRight?8:-8;enemy.vy=-6;}}
             hit(dmg){AudioEngine.sfx.hit();this.hp-=dmg;this.stun=15;for(let i=0;i<8;i++)particles.push({x:this.x+11,y:this.y+20,vx:(Math.random()-0.5)*8,vy:(Math.random()-0.5)*8,color:this.config.color,life:25,size:3});Game.updateUI();if(this.hp<=0)Game.endGame(this.id===1?2:1);}
             draw(ctx){if(this.hp<=0)return;drawCharacterDetailed(ctx,this.x,this.y,this.facingRight,this.config.color,this.config,this.animFrame,this.atkCd);}
         }
 
-        class MovingPlat { constructor(x,y,dx,dy,speed){this.start={x:x*TILE,y:y*TILE};this.x=this.start.x;this.y=this.start.y;this.w=TILE*3;this.h=15;this.dx=dx*TILE;this.dy=dy*TILE;this.speed=speed;} update(){let s=Math.sin(frame*this.speed);this.x=this.start.x+this.dx*s;this.y=this.start.y+this.dy*s;} draw(ctx){ctx.fillStyle='#64748b';ctx.fillRect(this.x,this.y,this.w,this.h);ctx.fillStyle='#94a3b8';ctx.fillRect(this.x,this.y,this.w,3);ctx.fillStyle='#334155';ctx.fillRect(this.x,this.y+12,this.w,3);}}
+        class MovingPlat { constructor(x,y,dx,dy,speed,range){this.start={x:x*TILE,y:y*TILE};this.x=this.start.x;this.y=this.start.y;this.w=TILE*3;this.h=15;this.dx=dx;this.dy=dy;this.speed=speed;this.range=range*TILE;} update(){let s=Math.sin(frame*this.speed);this.x=this.start.x+this.dx*s*this.range;this.y=this.start.y+this.dy*s*this.range;} draw(ctx){
+            if(currentMap==='clash'){ ctx.fillStyle=Math.random()>0.9?'#f00':'#4a044e'; ctx.fillRect(this.x,this.y,this.w,this.h); }
+            else { ctx.fillStyle='#64748b';ctx.fillRect(this.x,this.y,this.w,this.h);ctx.fillStyle='#94a3b8';ctx.fillRect(this.x,this.y,this.w,3);ctx.fillStyle='#334155';ctx.fillRect(this.x,this.y+12,this.w,3); }
+        }}
 
         function drawCharacterDetailed(ctx,x,y,facingRight,color,config,animFrame=0,atkCd=0){
             ctx.save(); ctx.translate(x+11,y+21); if(!facingRight)ctx.scale(-1,1);
             let breath=Math.sin(frame*0.05)*1, walk=Math.sin(animFrame*0.3)*4, armRot=atkCd>25?-50+(40-atkCd)*2:(Math.sin(frame*0.05)*5);
             let renderColor = config.rgb ? `hsl(${frame*2},100%,60%)` : color;
-            
             if(config.back==='cape'){let flow=Math.sin(frame*0.2)*3;ctx.fillStyle=renderColor;ctx.globalAlpha=0.6;ctx.beginPath();ctx.moveTo(-6,-12+breath);ctx.lineTo(-16+flow,25+walk+flow);ctx.lineTo(-2+flow,25-walk+flow);ctx.lineTo(6,-12+breath);ctx.fill();ctx.globalAlpha=1;}
             else if(config.back==='wings'){ctx.fillStyle=renderColor;ctx.shadowColor=renderColor;ctx.shadowBlur=15;ctx.globalAlpha=0.6;let wingFlap=Math.sin(frame*0.1)*5;ctx.beginPath();ctx.moveTo(-4,-10+breath);ctx.quadraticCurveTo(-25+wingFlap,-40,-35+wingFlap,10);ctx.quadraticCurveTo(-15,-10,-4,0+breath);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;}
             else if(config.back==='jetpack'){ctx.fillStyle='#475569';ctx.fillRect(-12,-12+breath,8,20);ctx.fillStyle='#334155';ctx.fillRect(-10,-8+breath,4,12);ctx.fillStyle=renderColor;ctx.fillRect(-11,-2+breath,2,2);}
             else if(config.back==='battery'){ctx.fillStyle='#334155';ctx.fillRect(-10,-12+breath,6,20);ctx.fillStyle=renderColor;ctx.fillRect(-9,-10+breath,4,16);ctx.fillStyle='white';ctx.globalAlpha=0.5;ctx.fillRect(-8,-10+breath,2,16);ctx.globalAlpha=1;}
             else if(config.back==='spider'){ctx.strokeStyle='#334155';ctx.lineWidth=2; for(let i=0;i<4;i++){let dy=i*5; ctx.beginPath();ctx.moveTo(-5,-5+dy+breath);ctx.lineTo(-20, -10+dy+breath+Math.sin(frame*0.1+i)*5);ctx.stroke();}}
             else if(config.back==='halo'){ctx.strokeStyle=renderColor;ctx.shadowColor=renderColor;ctx.shadowBlur=10;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,-35+breath*2,10,3,0,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;}
-
             ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(-5,-2);ctx.lineTo(-7,15);ctx.lineTo(-3,15);ctx.lineTo(-1,-2);ctx.fill();ctx.beginPath();ctx.moveTo(1,-2);ctx.lineTo(-1+walk,15);ctx.lineTo(3+walk,15);ctx.lineTo(5,-2);ctx.fill();
             ctx.fillStyle=renderColor;ctx.shadowColor=renderColor;ctx.shadowBlur=5;ctx.fillRect(-6+walk,8,4,2);ctx.fillRect(-1-walk*0.5,8,4,2);ctx.shadowBlur=0;
             ctx.fillStyle='#1e293b';ctx.beginPath();ctx.moveTo(-8,-12+breath);ctx.lineTo(8,-12+breath);ctx.lineTo(6,2);ctx.lineTo(-6,2);ctx.fill();
-            
-            if(config.ronin) {ctx.fillStyle='#b91c1c'; ctx.fillRect(-9,-12+breath,18,14); ctx.fillStyle=renderColor; ctx.beginPath(); ctx.moveTo(-6,-12+breath); ctx.lineTo(0,-6+breath); ctx.lineTo(6,-12+breath); ctx.fill();} 
-            else if(config.armor==='heavy'){ctx.fillStyle='#334155'; ctx.fillRect(-9,-10+breath,18,10); ctx.fillStyle=renderColor; ctx.fillRect(-4,-6+breath,8,4);} 
+            if(config.armor==='heavy'){ctx.fillStyle='#334155'; ctx.fillRect(-9,-10+breath,18,10); ctx.fillStyle=renderColor; ctx.fillRect(-4,-6+breath,8,4);} 
             else if(config.armor==='stealth'){ctx.strokeStyle=renderColor; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(-6,-8+breath); ctx.lineTo(0,2+breath); ctx.lineTo(6,-8+breath); ctx.stroke();} 
             else if(config.armor==='knight'){ctx.fillStyle='#475569'; ctx.fillRect(-10,-11+breath,20,12); ctx.fillStyle=renderColor;ctx.beginPath(); ctx.moveTo(-12,-12+breath); ctx.lineTo(-8,-14+breath); ctx.lineTo(-8,-8+breath); ctx.fill();ctx.beginPath(); ctx.moveTo(12,-12+breath); ctx.lineTo(8,-14+breath); ctx.lineTo(8,-8+breath); ctx.fill();ctx.fillRect(-5,-9+breath,10,6);} 
             else if(config.armor==='nano'){ctx.fillStyle='#1e293b'; ctx.fillRect(-7,-10+breath,14,10);ctx.strokeStyle=renderColor; ctx.globalAlpha=0.5; ctx.lineWidth=1; ctx.beginPath();ctx.moveTo(-4,-8+breath); ctx.lineTo(0,-10+breath); ctx.lineTo(4,-8+breath);ctx.moveTo(-4,-4+breath); ctx.lineTo(0,-6+breath); ctx.lineTo(4,-4+breath);ctx.moveTo(0,-2+breath); ctx.lineTo(0,2+breath); ctx.stroke(); ctx.globalAlpha=1;} 
             else if(config.armor==='juggernaut'){ctx.fillStyle='#111827'; ctx.fillRect(-11,-12+breath,22,16); ctx.fillStyle=renderColor; ctx.fillRect(-5,-8+breath,10,8);}
             else if(config.armor==='cyberninja'){ctx.fillStyle='#000'; ctx.beginPath();ctx.moveTo(-8,-12+breath);ctx.lineTo(0,0+breath);ctx.lineTo(8,-12+breath);ctx.fill(); ctx.strokeStyle=renderColor; ctx.stroke();}
             else {ctx.fillStyle=renderColor;ctx.shadowColor=renderColor;ctx.shadowBlur=5;ctx.fillRect(-5,-8+breath,10,6);ctx.shadowBlur=0;}
-            
             ctx.fillStyle='#f1f5f9';ctx.beginPath();ctx.arc(0,-17+breath,6,0,Math.PI*2);ctx.fill();
-            if(config.ronin) { ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(0,-17+breath,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle=renderColor; ctx.beginPath(); ctx.moveTo(-8,-22+breath); ctx.quadraticCurveTo(0,-35+breath,8,-22+breath); ctx.fill(); }
-            else if(config.helmet==='tactical'){ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(-7,-19+breath);ctx.lineTo(7,-19+breath);ctx.lineTo(7,-24+breath);ctx.lineTo(4,-26+breath);ctx.lineTo(-4,-26+breath);ctx.lineTo(-7,-24+breath);ctx.fill();ctx.fillStyle=renderColor;ctx.shadowColor=renderColor;ctx.shadowBlur=5;ctx.fillRect(-5,-19+breath,10,3);ctx.shadowBlur=0;}
+            if(config.helmet==='tactical'){ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(-7,-19+breath);ctx.lineTo(7,-19+breath);ctx.lineTo(7,-24+breath);ctx.lineTo(4,-26+breath);ctx.lineTo(-4,-26+breath);ctx.lineTo(-7,-24+breath);ctx.fill();ctx.fillStyle=renderColor;ctx.shadowColor=renderColor;ctx.shadowBlur=5;ctx.fillRect(-5,-19+breath,10,3);ctx.shadowBlur=0;}
             else if(config.helmet==='oni'){ctx.fillStyle='#991b1b';ctx.beginPath();ctx.arc(0,-17+breath,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(-4,-22+breath);ctx.lineTo(-6,-28+breath);ctx.lineTo(-2,-24+breath);ctx.moveTo(4,-22+breath);ctx.lineTo(6,-28+breath);ctx.lineTo(2,-24+breath);ctx.fill();}
             else if(config.helmet==='viking'){ctx.fillStyle='#334155';ctx.fillRect(-7,-22+breath,14,6);ctx.fillStyle=renderColor;ctx.shadowColor=renderColor;ctx.shadowBlur=8;ctx.beginPath();ctx.moveTo(-7,-20+breath);ctx.lineTo(-12,-30+breath);ctx.lineTo(-9,-22+breath);ctx.moveTo(7,-20+breath);ctx.lineTo(12,-30+breath);ctx.lineTo(9,-22+breath);ctx.fill();ctx.shadowBlur=0;}
             else if(config.helmet==='samurai'){ctx.fillStyle='#1e293b';ctx.beginPath();ctx.arc(0,-18+breath,8,Math.PI,0);ctx.fill();ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(0,-24+breath,6,0,Math.PI,true);ctx.fill();}
@@ -377,7 +539,6 @@
             else if(config.helmet==='hood'){ctx.fillStyle='#333'; ctx.beginPath();ctx.arc(0,-18+breath,9,Math.PI,0);ctx.lineTo(9,-10+breath);ctx.lineTo(-9,-10+breath);ctx.fill();ctx.fillStyle='#000';ctx.fillRect(-5,-18+breath,10,4);}
             else if(config.helmet==='pilot'){ctx.fillStyle='#334155';ctx.beginPath();ctx.arc(0,-18+breath,8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fbbf24';ctx.fillRect(-6,-20+breath,12,6);}
             else if(config.helmet==='demon'){ctx.fillStyle='#7f1d1d';ctx.beginPath();ctx.arc(0,-17+breath,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#000';ctx.beginPath();ctx.moveTo(-5,-22+breath);ctx.lineTo(-10,-35+breath);ctx.lineTo(0,-25+breath);ctx.moveTo(5,-22+breath);ctx.lineTo(10,-35+breath);ctx.lineTo(0,-25+breath);ctx.fill();}
-
             ctx.save();ctx.translate(0,-9+breath);ctx.rotate(armRot*Math.PI/180);ctx.fillStyle=renderColor;ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#1e293b';ctx.fillRect(-2,0,4,10);
             if(config.weapon==='scythe'){ctx.fillStyle='#0f172a';ctx.fillRect(-1,6,2,30);ctx.fillStyle='#94a3b8';ctx.beginPath();ctx.moveTo(0,6);ctx.quadraticCurveTo(25,0,30,15);ctx.lineTo(25,18);ctx.quadraticCurveTo(20,8,0,10);ctx.fill();ctx.strokeStyle=renderColor;ctx.lineWidth=2;ctx.shadowColor=renderColor;ctx.shadowBlur=10;ctx.beginPath();ctx.moveTo(0,6);ctx.quadraticCurveTo(25,0,30,15);ctx.stroke();ctx.shadowBlur=0;}
             else if(config.weapon==='katana'){ctx.fillStyle='#000';ctx.fillRect(-1,8,2,8);ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(0,16);ctx.quadraticCurveTo(3,30,1,45);ctx.lineTo(-1,45);ctx.quadraticCurveTo(1,30,-1,16);ctx.fill();ctx.fillStyle=renderColor;ctx.shadowColor=renderColor;ctx.shadowBlur=5;ctx.fillRect(-3,14,6,2);ctx.shadowBlur=0;}
@@ -394,79 +555,474 @@
         const Physics={
             collideX:(e)=>{let l=Math.floor(e.x/TILE),r=Math.floor((e.x+e.w-0.01)/TILE),t=Math.floor(e.y/TILE),b=Math.floor((e.y+e.h-0.01)/TILE);if(e.vx>0&&(Physics.solid(r,t)||Physics.solid(r,b))){e.x=r*TILE-e.w-0.01;e.vx=0;}else if(e.vx<0&&(Physics.solid(l,t)||Physics.solid(l,b))){e.x=(l+1)*TILE+0.01;e.vx=0;}},
             collideY:(e)=>{let l=Math.floor(e.x/TILE),r=Math.floor((e.x+e.w-0.01)/TILE),t=Math.floor(e.y/TILE),b=Math.floor((e.y+e.h-0.01)/TILE);if(e.vy>0){if(Physics.solid(l,b)||Physics.solid(r,b)){e.y=b*TILE-e.h-0.01;e.vy=0;e.grounded=true;return;}let fp=e.y-e.vy+e.h;if((Physics.plat(l,b)||Physics.plat(r,b))&&fp<=b*TILE+10){e.y=b*TILE-e.h-0.01;e.vy=0;e.grounded=true;return;}
-            for(let mp of movingPlats){if(e.x+e.w>mp.x&&e.x<mp.x+mp.w&&fp<=mp.y+10&&fp>=mp.y-5){e.y=mp.y-e.h;e.vy=0;e.grounded=true;e.x+=(mp.x-(mp.start.x+mp.dx*Math.sin((frame-1)*mp.speed)));return;}}}
+            for(let mp of movingPlats){if(e.x+e.w>mp.x&&e.x<mp.x+mp.w&&fp>=mp.y-10&&fp<=mp.y+20){e.y=mp.y-e.h;e.vy=0;e.grounded=true;return;}}}
             else if(e.vy<0&&(Physics.solid(l,t)||Physics.solid(r,t))){e.y=(t+1)*TILE+0.01;e.vy=0;}e.grounded=false;},
-            checkLava:(e)=>{let cx=Math.floor((e.x+e.w/2)/TILE),fy=Math.floor((e.y+e.h)/TILE);return (grid[cx]?grid[cx][fy]:0)===5;},
-            checkSpikes:(e)=>{let cx=Math.floor((e.x+e.w/2)/TILE),fy=Math.floor((e.y+e.h)/TILE);if((grid[cx]?grid[cx][fy]:0)>=30){e.hit(15);e.vy=-10;}},
+            checkLava:(e)=>{let cx=Math.floor((e.x+e.w/2)/TILE),fy=Math.floor((e.y+e.h)/TILE);return (grid[cx]&&grid[cx][fy]===5);},
+            checkSpikes:(e)=>{let cx=Math.floor((e.x+e.w/2)/TILE),fy=Math.floor((e.y+e.h)/TILE);if(grid[cx]&&grid[cx][fy]>=30){e.hit(15);e.vy=-10;}},
+            checkLadder:(e)=>{let cx=Math.floor((e.x+e.w/2)/TILE);let cy=Math.floor((e.y+e.h/2)/TILE);return (grid[cx]&&grid[cx][cy]===6);},
             solid:(x,y)=>x>=0&&x<COLS&&y>=0&&y<ROWS&&(grid[x][y]===1||grid[x][y]===9), plat:(x,y)=>x>=0&&x<COLS&&y>=0&&y<ROWS&&grid[x][y]===4
         };
 
         const Game={
             init:()=>{
-                Editor.initGrid();Game.updatePreviews();
+                Armory.init(); Game.loadMap('neon');
                 window.addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(e.code==='Space')k=' ';keys[k]=true;});
                 window.addEventListener('keyup',e=>{let k=e.key.toLowerCase();if(e.code==='Space')k=' ';keys[k]=false;});
-                canvas.addEventListener('mousedown',e=>{AudioEngine.start();mouse.down=true;Game.trackMouse(e);if(state==='EDITOR')Editor.interact();});
-                canvas.addEventListener('mousemove',e=>{Game.trackMouse(e);if(state==='EDITOR'&&mouse.down)Editor.interact();});
+                canvas.addEventListener('mousedown',e=>{AudioEngine.start();mouse.down=true;});
                 window.addEventListener('mouseup',()=>mouse.down=false);
                 Game.loop();
             },
-            trackMouse:(e)=>{const r=canvas.getBoundingClientRect();mouse.x=Math.floor((e.clientX-r.left)/(r.width/COLS));mouse.y=Math.floor((e.clientY-r.top)/(r.height/ROWS));},
             loop:()=>{frame++;
+                
+                // Logica Choque de Realidades
+                if(state === 'GAME' && currentMap === 'clash' && !isFinalCollapse) {
+                    clashTimer++;
+                    let timeLeft = Math.ceil((CLASH_INTERVAL - clashTimer)/60);
+                    document.getElementById('clash-timer-hud').innerText = `CAMBIO: ${timeLeft}s`;
+                    
+                    // ALERTA DE CICLO FINAL (4 de 5)
+                    if(clashCycleCount >= 4) { 
+                         document.getElementById('final-warning').classList.remove('hidden');
+                         document.getElementById('clash-timer-hud').style.color = 'red';
+                    }
+
+                    if(clashTimer >= CLASH_INTERVAL) {
+                        Game.triggerClashShift();
+                    }
+                }
+
+                // SIERRA
+                if(state === 'GAME' && sawBlade) sawBlade.update();
+
                 Renderer.drawBackground(currentMap);
-                Renderer.drawMap();if(state==='GAME'||state==='TEST'||state==='SELECT'){entities.forEach(e=>{e.update();e.draw(ctx);});Renderer.drawParticles();}if(state==='EDITOR')Renderer.drawEditor();if(state==='SELECT'){ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,1280,720);}requestAnimationFrame(Game.loop);},
+                Renderer.drawMap();
+                
+                if(state==='GAME'||state==='TEST'||state==='SELECT'){
+                    entities.forEach(e=>{e.update();e.draw(ctx);});
+                    Renderer.drawParticles();
+                    Renderer.drawEnvParticles();
+                    if(sawBlade) sawBlade.draw(ctx);
+                }
+
+                // Dibujar Destello transición
+                if(clashFlashAlpha > 0) {
+                    ctx.fillStyle = `rgba(255,255,255,${clashFlashAlpha})`;
+                    ctx.fillRect(0,0,1280,720);
+                    // Rayos
+                    if(clashFlashAlpha > 0.5) {
+                         ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.beginPath();
+                         let lx = Math.random()*1280; ctx.moveTo(lx, 0);
+                         for(let i=0; i<10; i++) { lx += (Math.random()-0.5)*150; ctx.lineTo(lx, (i+1)*72); }
+                         ctx.stroke();
+                         ctx.strokeStyle = '#f00'; ctx.lineWidth = 2; ctx.stroke();
+                    }
+                    clashFlashAlpha -= (longTransition ? 0.005 : 0.02);
+                    
+                    if(longTransition && clashFlashAlpha > 0.1) {
+                        ctx.save();
+                        ctx.translate((Math.random()-0.5)*10, (Math.random()-0.5)*10);
+                        ctx.restore();
+                    }
+                }
+
+                if(state==='SELECT'){ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,1280,720);}
+                requestAnimationFrame(Game.loop);
+            },
+            triggerClashShift: () => {
+                clashTimer = 0;
+                clashCycleCount++;
+
+                // RANDOMIZAR PERSONAJES
+                Armory.randomizeCharacter(p1Config);
+                Armory.randomizeCharacter(p2Config);
+
+                if(clashCycleCount >= 5) { // 5 CICLOS
+                    isFinalCollapse = true;
+                    longTransition = true;
+                    clashFlashAlpha = 1.0;
+                    SFX.collapse(); 
+                    document.getElementById('final-warning').classList.add('hidden');
+                    document.getElementById('clash-timer-hud').innerText = "COLAPSO TOTAL";
+                    Game.loadClashLevel('final_collapse');
+                } else {
+                    longTransition = false;
+                    clashFlashAlpha = 1.0;
+                    SFX.warp(); 
+                    let biomes = ['magma_c', 'forest_c', 'neon_c', 'void_c'];
+                    let next = biomes[Math.floor(Math.random() * biomes.length)];
+                    while(next === clashBiome) next = biomes[Math.floor(Math.random() * biomes.length)];
+                    Game.loadClashLevel(next);
+                }
+            },
             showScreen:(id)=>{document.querySelectorAll('.ui-screen,#editor-hud,#game-hud,#victory-screen').forEach(e=>e.classList.add('hidden'));if(id)document.getElementById(id).classList.remove('hidden');},
             goToMenu:()=>{Game.showScreen('menu-screen');state='MENU';entities=[];Game.loadMap('neon');AudioEngine.stopMusic();},
-            goToCustom:()=>{Game.showScreen('custom-screen');Game.updatePreviews();},
+            goToCustom:()=>{Game.showScreen('custom-screen'); Armory.updatePreview();},
             goToSelect:()=>{Game.showScreen('select-screen');state='SELECT';Game.previewMap('neon');},
-            startEditor:()=>{Game.showScreen('editor-hud');state='EDITOR';Editor.clear();}, 
-            startGame:()=>{Game.showScreen('game-hud');state='GAME';entities=[new Player(1,100,100,p1Config),new Player(2,1100,100,p2Config)];Game.updateUI();document.getElementById('p1-name-hud').innerText=p1Config.name;document.getElementById('p2-name-hud').innerText=p2Config.name;AudioEngine.startMusic();},
-            saveAndExit:()=>{p1Config.name=document.getElementById('p1-n').value;p2Config.name=document.getElementById('p2-n').value;Game.goToMenu();},
-            showStoryMsg:()=>{const t=document.getElementById('toast-msg');t.classList.add('show');SFX.ui();setTimeout(()=>t.classList.remove('show'),2000);},
-            testLevel:()=>{let btn=document.getElementById('btn-test');if(state==='EDITOR'){state='TEST';entities=[new Player(1,100,100,p1Config),new Player(2,1100,100,p2Config)];btn.innerText="PARAR";btn.style.background='#dc2626';}else{state='EDITOR';entities=[];btn.innerText="PROBAR";btn.style.background='';}},
-            updatePreviews:()=>{
-                p1Config={name:p1Config.name,color:document.getElementById('p1-c').value,helmet:document.getElementById('p1-h').value,back:document.getElementById('p1-b').value,weapon:document.getElementById('p1-w').value,armor:document.getElementById('p1-a').value,rgb:false,ronin:document.getElementById('p1-ronin').checked};
-                p2Config={name:p2Config.name,color:document.getElementById('p2-c').value,helmet:document.getElementById('p2-h').value,back:document.getElementById('p2-b').value,weapon:document.getElementById('p2-w').value,armor:document.getElementById('p2-a').value,rgb:false,ronin:document.getElementById('p2-ronin').checked};
-                Game.renderPrev('p1-preview',p1Config,true);Game.renderPrev('p2-preview',p2Config,false);
-                const r=()=>30+Math.random()*70;
-                document.getElementById('p1-stat-atk').style.width=r()+'%'; document.getElementById('p1-stat-def').style.width=r()+'%'; document.getElementById('p1-stat-spd').style.width=r()+'%';
-                document.getElementById('p2-stat-atk').style.width=r()+'%'; document.getElementById('p2-stat-def').style.width=r()+'%'; document.getElementById('p2-stat-spd').style.width=r()+'%';
+            showProximamente: () => {
+                const t = document.getElementById('toast-msg');
+                t.innerText = "PRÓXIMAMENTE"; t.classList.add('show'); SFX.ui();
+                setTimeout(() => t.classList.remove('show'), 2000);
             },
-            renderPrev:(id,cfg,right)=>{let pCtx=document.getElementById(id).getContext('2d');pCtx.clearRect(0,0,200,200);pCtx.save();pCtx.translate(100,100);pCtx.scale(4,4);pCtx.translate(-11,-21);drawCharacterDetailed(pCtx,0,0,right,cfg.color,cfg);pCtx.restore();},
-            clickSecret:(id,e)=>{let rect=e.target.getBoundingClientRect(); if((e.clientY-rect.top)<100){AudioEngine.sfx.win(); document.getElementById(id===1?'p1-secrets':'p2-secrets').classList.add('unlocked');}},
+            startGame:()=>{
+                Game.showScreen('game-hud');
+                state='GAME';
+                entities=[new Player(1,100,200,p1Config),new Player(2,1100,200,p2Config)];
+                Game.updateUI();
+                document.getElementById('p1-name-hud').innerText=p1Config.name;
+                document.getElementById('p2-name-hud').innerText=p2Config.name;
+                
+                if(currentMap === 'clash') {
+                    clashTimer = 0; clashBiome = 'base';
+                    clashCycleCount = 0; isFinalCollapse = false; sawBlade = null;
+                    document.getElementById('clash-timer-hud').style.opacity = 1;
+                    document.getElementById('clash-mode-hud').style.opacity = 1;
+                    document.getElementById('final-warning').classList.add('hidden');
+                    document.getElementById('clash-timer-hud').style.color = 'white';
+                } else {
+                    document.getElementById('clash-timer-hud').style.opacity = 0;
+                    document.getElementById('clash-mode-hud').style.opacity = 0;
+                    document.getElementById('final-warning').classList.add('hidden');
+                    sawBlade = null;
+                }
+            },
+            restartGame:()=>{
+                document.getElementById('victory-screen').classList.add('hidden');
+                if(currentMap === 'clash') Game.loadMap('clash'); 
+                else Game.loadMap(currentMap);
+                Game.startGame();
+            },
+            saveAndExit:()=>{Game.goToMenu();},
             updateUI:()=>{if(entities.length<2)return;document.getElementById('hp-bar-1').style.width=Math.max(0,entities[0].hp)+'%';document.getElementById('hp-bar-2').style.width=Math.max(0,entities[1].hp)+'%';document.getElementById('hp-txt-1').innerText=Math.ceil(Math.max(0,entities[0].hp))+'%';document.getElementById('hp-txt-2').innerText=Math.ceil(Math.max(0,entities[1].hp))+'%';},
+            
+            // MODALES
+            openSecretModal:()=>{ document.getElementById('secret-modal').classList.add('active'); secretAttempts=0; document.getElementById('secret-pass').value = ''; document.getElementById('secret-hint').innerText = ''; },
+            closeSecretModal:()=>{ document.getElementById('secret-modal').classList.remove('active'); },
+            openUpdateModal:()=>{ document.getElementById('update-modal').classList.add('active'); },
+            closeUpdateModal:()=>{ document.getElementById('update-modal').classList.remove('active'); },
+            
+            checkSecret:()=>{
+                let val = document.getElementById('secret-pass').value.toUpperCase();
+                if(val === SECRET_PASS){
+                    SFX.win();
+                    document.getElementById('btn-secret-level').outerHTML = `
+                    <button onmouseenter="Game.previewMap('destruction'); SFX.hover()" onclick="SFX.ui(); Game.confirmMap('destruction')" class="w-full text-left p-5 bg-slate-900/80 hover:bg-orange-900/60 border border-orange-700 hover:border-orange-500 rounded-lg transition-all group relative overflow-hidden">
+                        <div class="font-bold text-xl text-orange-500 group-hover:text-white relative z-10">TON-618 ABYSS</div>
+                        <div class="text-xs text-slate-400 relative z-10">Singularidad Masiva.</div>
+                    </button>`;
+                    Game.closeSecretModal();
+                } else {
+                    secretAttempts++;
+                    let hint = "PISTA: " + SECRET_PASS.substring(0, secretAttempts) + "...";
+                    document.getElementById('secret-hint').innerText = hint;
+                    AudioEngine.sfx.hit();
+                }
+            },
+
             loadMap:(t)=>{
-                grid=new Array(COLS).fill(0).map(()=>new Array(ROWS).fill(0));movingPlats=[];currentMap=t;bgElements=[]; 
-                if(t==='neon'){for(let i=0;i<15;i++)bgElements.push({x:i*90+Math.random()*40,y:100+Math.random()*200,w:50+Math.random()*40});}
-                else if(t==='forest'){for(let i=0;i<20;i++)bgElements.push({x:Math.random()*1280,h:200+Math.random()*200});}
-                else if(t==='void'){for(let i=0;i<100;i++)bgElements.push({x:Math.random()*1280,y:Math.random()*720,s:Math.random()*2});}
-                else if(t==='glacier'){for(let i=0;i<10;i++)bgElements.push({x:i*130,h:200+Math.random()*300});}
+                currentMap=t;
+                if(t === 'clash') {
+                    Game.loadClashLevel('base');
+                    return;
+                }
+                grid=new Array(COLS).fill(0).map(()=>new Array(ROWS).fill(0));movingPlats=[];bgElements=[];environmentParticles=[];
+                sawBlade = null;
                 for(let i=0;i<COLS;i++){grid[i][0]=9;grid[i][ROWS-1]=9;}for(let i=0;i<ROWS;i++){grid[0][i]=9;grid[COLS-1][i]=9;}
                 
-                if(t==='neon'){for(let x=2;x<30;x++)grid[x][16]=1;grid[8][14]=1;grid[9][13]=4;grid[23][14]=1;grid[22][13]=4;for(let x=10;x<22;x++)grid[x][12]=4;movingPlats.push(new MovingPlat(4,10,3,0,0.02));movingPlats.push(new MovingPlat(25,10,-3,0,0.02));}
-                else if(t==='magma'){for(let x=1;x<31;x++)grid[x][16]=(x>10&&x<22)?5:1;grid[8][13]=1;grid[9][13]=4;grid[23][13]=1;grid[22][13]=4;movingPlats.push(new MovingPlat(11,11,0,3,0.02));movingPlats.push(new MovingPlat(18,11,0,-3,0.02));}
-                else if(t==='forest'){for(let x=1;x<31;x++)grid[x][16]=1;grid[5][12]=4;grid[6][12]=4;grid[25][12]=4;grid[26][12]=4;grid[15][10]=4;grid[16][10]=4;movingPlats.push(new MovingPlat(10,13,10,0,0.03));}
-                else if(t==='glacier'){for(let i=0;i<4;i++){grid[2+i][14]=1; grid[3+i][14]=1;grid[29-i][14]=1; grid[28-i][14]=1;}grid[8][11]=4; grid[23][11]=4; grid[14][9]=4; grid[17][9]=4;for(let x=1;x<31;x++)grid[x][17]=1; movingPlats.push(new MovingPlat(14,12,0,2,0.02));}
-                else if(t==='void'){grid[2][14]=1; grid[3][14]=1; grid[28][14]=1; grid[29][14]=1; grid[14][10]=1; grid[15][10]=1; grid[16][10]=1; grid[17][10]=1; grid[8][12]=4; grid[23][12]=4; movingPlats.push(new MovingPlat(5,12,2,0,0.025)); movingPlats.push(new MovingPlat(24,12,-2,0,0.025));for(let x=1;x<31;x++) grid[x][17]=30;}
+                if(t==='magma'){
+                    for(let x=1;x<31;x++) grid[x][16]=(x>9&&x<22)?5:1;
+                    for(let x=2;x<9;x++) grid[x][13]=1; for(let x=23;x<30;x++) grid[x][13]=1;
+                    movingPlats.push(new MovingPlat(9, 14, 0, 1, 0.02, -7)); movingPlats.push(new MovingPlat(21, 14, 0, 1, 0.02, -7));
+                    for(let x=12;x<20;x++) grid[x][10]=1; for(let x=8;x<24;x++) grid[x][4]=1;
+                    for(let y=5;y<13;y++) { grid[7][y]=6; grid[24][y]=6; } for(let y=5;y<10;y++) { grid[12][y]=6; grid[19][y]=6; }
+                }
+                else if(t==='neon'){
+                    for(let i=0;i<15;i++)bgElements.push({x:i*90,y:100+Math.random()*200,w:50});
+                    for(let x=2;x<30;x++) grid[x][16]=1; 
+                    for(let y=12;y<16;y++){ grid[6][y]=1; grid[25][y]=1; } for(let y=12;y<16;y++){ grid[5][y]=6; grid[26][y]=6; }
+                    grid[14][10]=4; grid[15][10]=4; grid[16][10]=4; grid[17][10]=4;
+                    movingPlats.push(new MovingPlat(9,10,1,0,0.02,3)); movingPlats.push(new MovingPlat(20,10,-1,0,0.02,3));
+                }
+                else if(t==='forest'){
+                    for(let i=0;i<20;i++)bgElements.push({x:Math.random()*1280,h:200+Math.random()*200});
+                    for(let x=1;x<31;x++) grid[x][16]=1; for(let y=10;y<16;y++) { grid[6][y]=1; grid[5][y]=6; } 
+                    grid[4][10]=4; grid[5][10]=4; grid[6][10]=4; grid[7][10]=4; 
+                    for(let y=8;y<16;y++) { grid[25][y]=1; grid[26][y]=6; } grid[23][8]=4; grid[24][8]=4; grid[25][8]=4; grid[26][8]=4; 
+                    movingPlats.push(new MovingPlat(12,12,1,0,0.015,4));
+                }
+                else if(t==='glacier'){
+                    for(let x=1;x<31;x++) grid[x][17]=1; for(let x=10;x<22;x++) grid[x][14]=1; for(let x=12;x<20;x++) grid[x][11]=1;
+                    for(let x=14;x<18;x++) grid[x][8]=1; for(let y=11;y<14;y++){ grid[11][y]=6; grid[20][y]=6; }
+                    movingPlats.push(new MovingPlat(2,12,1,0,0.02,3)); movingPlats.push(new MovingPlat(26,12,-1,0,0.02,3));
+                }
+                else if(t==='destruction'){
+                    for(let x=1;x<31;x++) grid[x][16]=(x%3===0)?5:1; for(let x=5;x<12;x++) grid[x][13]=1; for(let x=20;x<27;x++) grid[x][13]=1;
+                    for(let y=8;y<14;y++) { grid[4][y]=6; grid[27][y]=6; } grid[15][10]=1; grid[16][10]=1; grid[15][9]=6; grid[16][9]=6;
+                    movingPlats.push(new MovingPlat(10,7,1,0.5,0.03,8)); for(let x=8;x<24;x++) if(x%2===0) grid[x][5]=4;
+                }
+                else if(t==='void'){
+                     for(let x=10;x<22;x++) grid[x][15]=1; for(let x=4;x<8;x++) grid[x][12]=1; for(let x=24;x<28;x++) grid[x][12]=1; for(let x=14;x<18;x++) grid[x][9]=4; movingPlats.push(new MovingPlat(2,8,1,0,0.02,5)); movingPlats.push(new MovingPlat(26,8,-1,0,0.02,5));
+                }
             },
+
+            loadClashLevel: (subType) => {
+                clashBiome = subType;
+                let txtHud = document.getElementById('clash-mode-hud');
+                
+                grid=new Array(COLS).fill(0).map(()=>new Array(ROWS).fill(0));movingPlats=[];bgElements=[];environmentParticles=[];
+                sawBlade = null;
+                for(let i=0;i<COLS;i++){grid[i][0]=9;grid[i][ROWS-1]=9;}for(let i=0;i<ROWS;i++){grid[0][i]=9;grid[COLS-1][i]=9;}
+                
+                if(state === 'GAME') {
+                    // Reposicionar jugadores si caen
+                    entities.forEach(e => { if(e.y > 600) { e.y = 100; e.vy = 0; } });
+                }
+
+                if(subType === 'final_collapse') {
+                    txtHud.innerText = "ESTADO: COLAPSO TOTAL"; txtHud.style.color = '#b91c1c';
+                    
+                    // 1. LAVA
+                    for(let x=1; x<31; x++) grid[x][17] = 5;
+
+                    // 2. ISLAS LATERALES
+                    for(let x=2; x<10; x++) grid[x][12] = 1; // Izq
+                    for(let x=22; x<30; x++) grid[x][12] = 1; // Der
+
+                    // 3. SPAWNS (Círculos Azules en la imagen)
+                    // Hacemos que los jugadores "caigan" en las islas laterales
+                    entities[0].x = 6 * TILE; entities[0].y = 8 * TILE;
+                    entities[1].x = 25 * TILE; entities[1].y = 8 * TILE;
+
+                    // 4. SPIKES EN LAS ESQUINAS (Triángulos verdes)
+                    grid[2][12] = 30; grid[9][12] = 30;
+                    grid[22][12] = 30; grid[29][12] = 30;
+
+                    // 5. PLATAFORMA FLOTANTE SUPERIOR
+                    for(let x=12; x<20; x++) grid[x][7] = 1;
+
+                    // 6. SIERRA (Círculo Verde en el centro)
+                    // Oscilará entre x=10 y x=22 aprox
+                    sawBlade = new SawBlade(16, 12); // En medio, a altura de las islas
+                }
+                else if(subType === 'base') {
+                    txtHud.innerText = "ESTADO: BASE"; txtHud.style.color = '#fff';
+                    for(let x=8; x<24; x+=2) grid[x][14] = 1;
+                    for(let x=4; x<10; x++) grid[x][10] = 4; for(let x=22; x<28; x++) grid[x][10] = 4;
+                    movingPlats.push(new MovingPlat(14, 8, 0, 1, 0.05, 5));
+                } 
+                else if(subType === 'magma_c') {
+                    txtHud.innerText = "ESTADO: FUEGO FATUO"; txtHud.style.color = '#818cf8';
+                    for(let x=1;x<31;x++) grid[x][17]=(x%3===0)?5:1; 
+                    for(let x=2;x<30;x+=4) grid[x][12]=1; 
+                    grid[15][8]=1; grid[16][8]=1;
+                    movingPlats.push(new MovingPlat(2, 5, 1, 0, 0.08, 15));
+                }
+                else if(subType === 'forest_c') {
+                    txtHud.innerText = "ESTADO: FOREST DECAY"; txtHud.style.color = '#57534e';
+                    for(let x=1; x<31; x++) if(x%5!==0) grid[x][16]=1;
+                    for(let x=5; x<27; x+=7) {
+                        grid[x][15]=6; grid[x][14]=6; grid[x][13]=6;
+                        grid[x-1][13]=1; grid[x+1][13]=1;
+                    }
+                    movingPlats.push(new MovingPlat(12, 6, 0, 1, 0.02, 3));
+                }
+                else if(subType === 'neon_c') {
+                    txtHud.innerText = "ESTADO: SYSTEM FAILURE"; txtHud.style.color = '#ef4444';
+                    for(let y=2; y<16; y+=2) { grid[4][y]=1; grid[27][y]=1; }
+                    for(let x=8; x<24; x++) grid[x][16]=1;
+                    movingPlats.push(new MovingPlat(10, 10, 1, 0, 0.1, 5)); 
+                    movingPlats.push(new MovingPlat(20, 5, -1, 0, 0.1, 5));
+                }
+                else if(subType === 'void_c') {
+                    txtHud.innerText = "ESTADO: GRAVEDAD LUNAR"; txtHud.style.color = '#a855f7';
+                    grid[4][14]=1; grid[5][14]=1;
+                    grid[26][14]=1; grid[27][14]=1;
+                    grid[15][10]=1; grid[16][10]=1;
+                    movingPlats.push(new MovingPlat(14, 5, 0, 1, 0.02, 4));
+                }
+            },
+            
             previewMap:(t)=>{Game.loadMap(t);document.getElementById('preview-title').innerText=t.toUpperCase();},
             confirmMap:(t)=>{Game.loadMap(t);Game.startGame();},
-            endGame:(winnerId)=>{if(state!=='GAME')return;AudioEngine.sfx.win();document.getElementById('victory-screen').classList.remove('hidden');document.getElementById('winner-name').innerText=entities[winnerId-1].config.name;document.getElementById('winner-name').style.color=entities[winnerId-1].config.color;AudioEngine.stopMusic();},
-            restartGame:()=>{document.getElementById('victory-screen').classList.add('hidden');Game.startGame();}
+            endGame:(winnerId)=>{if(state!=='GAME')return;AudioEngine.sfx.win();document.getElementById('victory-screen').classList.remove('hidden');document.getElementById('winner-name').innerText=entities[winnerId-1].config.name;document.getElementById('winner-name').style.color=entities[winnerId-1].config.color;},
         };
-        const Editor={tool:1,rot:0,initGrid:()=>{grid=new Array(COLS).fill(0).map(()=>new Array(ROWS).fill(0));for(let i=0;i<COLS;i++){grid[i][0]=9;grid[i][ROWS-1]=9;}for(let i=0;i<ROWS;i++){grid[0][i]=9;grid[COLS-1][i]=9;}},setTool:(id)=>{if(id===3&&Editor.tool===3)Editor.rot=(Editor.rot+1)%4;else Editor.rot=0;Editor.tool=id;document.querySelectorAll('.btn-icon').forEach(b=>b.classList.remove('tool-selected'));document.getElementById('tool-'+id).classList.add('tool-selected');},interact:()=>{let{x,y}=mouse;if(x<=0||x>=COLS-1||y<=0||y>=ROWS-1)return;if(Editor.tool===3)grid[x][y]=30+Editor.rot;else if(Editor.tool===0){if(grid[x][y]!==9)grid[x][y]=0;}else grid[x][y]=Editor.tool;},clear:()=>{for(let x=1;x<COLS-1;x++)for(let y=1;y<ROWS-1;y++)grid[x][y]=0;}};
+        
         const Renderer={
             drawBackground:(t)=>{
                 const g=ctx.createLinearGradient(0,0,0,720);
-                if(t==='neon'){g.addColorStop(0,'#0f172a');g.addColorStop(1,'#312e81');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);ctx.fillStyle='#1e1b4b'; bgElements.forEach(b=>{ctx.fillRect(b.x,720-b.y,b.w,b.y);ctx.fillStyle='#4f46e5';if(b.y>150)ctx.fillRect(b.x+10,730-b.y,10,10);ctx.fillStyle='#1e1b4b';});}
-                else if(t==='magma'){g.addColorStop(0,'#450a0a');g.addColorStop(1,'#7f1d1d');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);ctx.fillStyle='#991b1b';ctx.beginPath();ctx.moveTo(0,720);ctx.lineTo(300,400);ctx.lineTo(600,720);ctx.lineTo(900,350);ctx.lineTo(1280,720);ctx.fill();}
-                else if(t==='forest'){g.addColorStop(0,'#022c22');g.addColorStop(1,'#064e3b');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);ctx.fillStyle='#065f46'; bgElements.forEach(b=>{ctx.beginPath();ctx.moveTo(b.x,720);ctx.lineTo(b.x+40,720-b.h);ctx.lineTo(b.x+80,720);ctx.fill();});}
-                else if(t==='sky'){g.addColorStop(0,'#0ea5e9');g.addColorStop(1,'#e0f2fe');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);ctx.fillStyle='white';ctx.globalAlpha=0.4; bgElements.forEach((b,i)=>{let off=Math.sin((frame+i*100)*0.005)*50;ctx.beginPath();ctx.arc(b.x+off,b.y,b.s,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;}
-                else if(t==='glacier'){g.addColorStop(0,'#1e3a8a');g.addColorStop(1,'#bfdbfe');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);ctx.fillStyle='white';ctx.globalAlpha=0.15; bgElements.forEach(b=>{ctx.beginPath();ctx.moveTo(b.x,720);ctx.lineTo(b.x+65,720-b.h);ctx.lineTo(b.x+130,720);ctx.fill();});ctx.globalAlpha=1;}
-                else if(t==='void'){g.addColorStop(0,'#000000');g.addColorStop(1,'#4c1d95');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);ctx.fillStyle='white'; bgElements.forEach(b=>{ctx.fillRect(b.x,b.y,b.s,b.s);});}
-                else {ctx.fillStyle='#020617';ctx.fillRect(0,0,1280,720);}
+                
+                if(t === 'clash') {
+                    // FONDO ZERO POINT
+                    ctx.fillStyle='#000'; ctx.fillRect(0,0,1280,720);
+                    
+                    let pulse = Math.sin(frame*0.1)*30;
+                    let colorBase = '#fff';
+                    let isBroken = clashBiome === 'final_collapse';
+                    
+                    if(isBroken) {
+                        colorBase = '#991b1b'; // Rojo sangre
+                        pulse = Math.random() * 50;
+                    } else {
+                        if(clashBiome === 'magma_c') colorBase = '#818cf8'; 
+                        if(clashBiome === 'forest_c') colorBase = '#78716c'; 
+                        if(clashBiome === 'neon_c') colorBase = '#ef4444'; 
+                        if(clashBiome === 'void_c') colorBase = '#a855f7'; 
+                    }
+
+                    // Rayos del fondo
+                    ctx.save();
+                    ctx.translate(640, 360);
+                    ctx.rotate(frame * (isBroken ? 0.02 : 0.005));
+                    for(let i=0; i< (isBroken?12:8); i++) {
+                        ctx.rotate(Math.PI/(isBroken?6:4));
+                        ctx.fillStyle = colorBase; ctx.globalAlpha = 0.1;
+                        ctx.beginPath(); 
+                        if(isBroken) {
+                             ctx.moveTo(0,0); ctx.lineTo(20, -800); ctx.lineTo(-80, -800);
+                        } else {
+                             ctx.moveTo(0,0); ctx.lineTo(50, -800); ctx.lineTo(-50, -800); 
+                        }
+                        ctx.fill();
+                    }
+                    ctx.restore(); ctx.globalAlpha = 1;
+
+                    // La esfera (Punto Cero)
+                    if(isBroken) {
+                        ctx.fillStyle = '#000'; // Agujero negro
+                        ctx.beginPath(); ctx.arc(640, 360, 150, 0, Math.PI*2); ctx.fill();
+                        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3;
+                        for(let i=0; i<8; i++) {
+                            let ang = (frame*0.05) + (i * (Math.PI*2)/8);
+                            let dist = 160 + Math.sin(frame*0.2 + i)*20;
+                            ctx.beginPath();
+                            ctx.moveTo(640 + Math.cos(ang)*150, 360 + Math.sin(ang)*150);
+                            ctx.lineTo(640 + Math.cos(ang)*dist, 360 + Math.sin(ang)*dist);
+                            ctx.stroke();
+                        }
+                        if(frame%2===0) environmentParticles.push({x:Math.random()*1280, y:-50, vx:0, vy:15, life:80, c:'#ef4444', s:14, binary:true});
+                    } else {
+                        let zpGrad = ctx.createRadialGradient(640, 360, 10, 640, 360, 200+pulse);
+                        zpGrad.addColorStop(0, '#fff');
+                        zpGrad.addColorStop(0.2, colorBase);
+                        zpGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                        ctx.fillStyle = zpGrad;
+                        ctx.beginPath(); ctx.arc(640, 360, 200+pulse, 0, Math.PI*2); ctx.fill();
+                        if(frame%4===0) environmentParticles.push({x:640, y:360, vx:(Math.random()-0.5)*15, vy:(Math.random()-0.5)*15, life:60, c:colorBase, s:12, binary:true});
+                    }
+                }
+                else if(state === 'MENU') {
+                    g.addColorStop(0,'#0f172a');g.addColorStop(1,'#1e1b4b');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);
+                    if(frame%2===0) {
+                        menuParticles.push({x: Math.random()*1280, y: 720, vx: (Math.random()-0.5)*2, vy: -(Math.random()*3 + 2), life: Math.random()*40 + 20, color: `hsl(${Math.random()*40}, 100%, 50%)`, size: Math.random()*6 + 2});
+                    }
+                    for(let i=menuParticles.length-1; i>=0; i--){
+                        let p = menuParticles[i]; p.x += p.vx; p.y += p.vy; p.life--; p.size *= 0.96;
+                        ctx.fillStyle = p.color; ctx.globalAlpha = p.life/60; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
+                        if(p.life <= 0) menuParticles.splice(i, 1);
+                    }
+                }
+                else if(t==='destruction'){
+                    ctx.fillStyle='#000'; ctx.fillRect(0,0,1280,720);
+                    let centerGrad = ctx.createRadialGradient(640, 360, 50, 640, 360, 500);
+                    centerGrad.addColorStop(0, '#000'); centerGrad.addColorStop(0.2, '#000'); centerGrad.addColorStop(0.25, '#fbbf24'); centerGrad.addColorStop(0.4, '#7c2d12'); centerGrad.addColorStop(1, '#000');
+                    ctx.fillStyle = centerGrad; ctx.beginPath(); ctx.arc(640, 360, 600, 0, Math.PI*2); ctx.fill();
+                    ctx.save(); ctx.translate(640,360); ctx.rotate(frame*0.005); ctx.strokeStyle = 'rgba(251, 191, 36, 0.1)'; ctx.lineWidth = 100; ctx.beginPath(); ctx.arc(0,0,300,0,Math.PI*2); ctx.stroke(); ctx.restore();
+                    if(frame%2===0) environmentParticles.push({x:640+(Math.random()-0.5)*1200, y:360+(Math.random()-0.5)*1200, vx:0, vy:0, life:100, c:'#fbbf24', s:Math.random()*4, bh:true});
+                } else if(t==='neon'){
+                    g.addColorStop(0,'#0f172a');g.addColorStop(1,'#312e81');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);
+                    if(frame%2===0) environmentParticles.push({x:Math.random()*1280, y:0, vx:0, vy:10+Math.random()*5, life:60, c:'#06b6d4', s:1});
+                    bgElements.forEach(b=>{ctx.fillStyle='#1e1b4b';ctx.fillRect(b.x,720-b.y,b.w,b.y);ctx.fillStyle='#4f46e5';if(b.y>150)ctx.fillRect(b.x+10,730-b.y,10,10);});
+                } else if(t==='forest'){
+                    g.addColorStop(0,'#022c22');g.addColorStop(1,'#0f172a');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);
+                    if(frame%10===0) environmentParticles.push({x:Math.random()*1280, y:Math.random()*720, vx:0.5, vy:0.2, life:100, c:'#4ade80', s:2});
+                    ctx.fillStyle='#064e3b'; bgElements.forEach(b=>{ctx.beginPath();ctx.moveTo(b.x,720);ctx.lineTo(b.x+40,720-b.h);ctx.lineTo(b.x+80,720);ctx.fill();});
+                } else if(t==='magma'){
+                    g.addColorStop(0,'#450a0a');g.addColorStop(1,'#0f172a');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);
+                    if(frame%5===0) environmentParticles.push({x:Math.random()*1280, y:720, vx:(Math.random()-0.5)*2, vy:-2, life:80, c:'#f97316', s:2});
+                    ctx.fillStyle='#7f1d1d';ctx.beginPath();ctx.moveTo(0,720);ctx.lineTo(300,400);ctx.lineTo(600,720);ctx.lineTo(900,350);ctx.lineTo(1280,720);ctx.fill();
+                } else if(t==='glacier'){
+                    g.addColorStop(0,'#1e3a8a');g.addColorStop(1,'#bfdbfe');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);
+                    if(frame%3===0) environmentParticles.push({x:Math.random()*1280, y:0, vx:1, vy:3, life:100, c:'#fff', s:2});
+                } else if(t==='void'){
+                    g.addColorStop(0,'#000');g.addColorStop(1,'#4c1d95');ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);
+                    if(frame%2===0) environmentParticles.push({x:Math.random()*1280, y:Math.random()*720, vx:(Math.random()-0.5)*0.5, vy:(Math.random()-0.5)*0.5, life:150, c:'#a855f7', s:1});
+                } else {
+                    ctx.fillStyle='#0f172a';ctx.fillRect(0,0,1280,720);
+                }
             },
-            drawMap:()=>{for(let x=0;x<COLS;x++)for(let y=0;y<ROWS;y++){let id=grid[x][y];if(!id)continue;let px=x*TILE,py=y*TILE;if(id===1){ctx.fillStyle='#1e293b';ctx.fillRect(px,py,TILE,TILE);ctx.fillStyle='#0f172a';ctx.fillRect(px+2,py+2,36,36);ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.strokeRect(px+4,py+4,32,32);}else if(id===4){ctx.fillStyle='#475569';ctx.fillRect(px,py,40,10);ctx.fillStyle='#000';ctx.fillRect(px,py,40,2);ctx.fillStyle='#94a3b8';ctx.fillRect(px+2,py+3,36,4);}else if(id===5){let w=Math.sin(frame*0.1+x)*4;ctx.fillStyle='#c2410c';ctx.fillRect(px,py+10,40,30);ctx.fillStyle='#ea580c';ctx.beginPath();ctx.moveTo(px,py+10);ctx.quadraticCurveTo(px+20,py+10+w,px+40,py+10);ctx.lineTo(px+40,py+40);ctx.lineTo(px,py+40);ctx.fill();}else if(id>=30)Renderer.drawSpike(px,py,id);else if(id===9){ctx.fillStyle='#000';ctx.fillRect(px,py,40,40);}} for(let mp of movingPlats)mp.update(),mp.draw(ctx);},drawSpike:(x,y,id)=>{ctx.fillStyle='#991b1b';ctx.beginPath();if(id===30){ctx.moveTo(x,y+40);ctx.lineTo(x+20,y);ctx.lineTo(x+40,y+40);}else if(id===31){ctx.moveTo(x,y);ctx.lineTo(x+40,y+20);ctx.lineTo(x,y+40);}else if(id===32){ctx.moveTo(x,y);ctx.lineTo(x+20,y+40);ctx.lineTo(x+40,y);}else{ctx.moveTo(x+40,y);ctx.lineTo(x,y+20);ctx.lineTo(x+40,y+40);}ctx.fill();},drawEditor:()=>{ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=1;for(let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*TILE,0);ctx.lineTo(i*TILE,720);ctx.stroke();}for(let i=0;i<=ROWS;i++){ctx.beginPath();ctx.moveTo(0,i*TILE);ctx.lineTo(1280,i*TILE);ctx.stroke();}if(mouse.x>0&&mouse.x<COLS-1&&mouse.y>0&&mouse.y<ROWS-1){let px=mouse.x*TILE,py=mouse.y*TILE;ctx.strokeStyle='white';ctx.lineWidth=2;ctx.strokeRect(px,py,40,40);ctx.globalAlpha=0.5;if(Editor.tool===3)Renderer.drawSpike(px,py,30+Editor.rot);else{ctx.fillStyle=Editor.tool===0?'red':(Editor.tool===5?'orange':'white');ctx.fillRect(px+10,py+10,20,20);}ctx.globalAlpha=1;}},drawParticles:()=>{for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx;p.y+=p.vy;p.life--;if(p.isSlash){ctx.strokeStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=10;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,25,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;}else{ctx.fillStyle=p.color;ctx.globalAlpha=p.life/30;ctx.fillRect(p.x,p.y,p.size,p.size);ctx.globalAlpha=1;}if(p.life<=0)particles.splice(i,1);}}};
+            drawMap:()=>{
+                let isClash = currentMap === 'clash';
+                for(let x=0;x<COLS;x++)for(let y=0;y<ROWS;y++){
+                    let id=grid[x][y]; if(!id)continue; let px=x*TILE,py=y*TILE;
+                    
+                    // EFECTO GLITCH EN CLASH: Bloques se mueven y cambian color
+                    let glitchColor = null;
+                    if(isClash && Math.random() > 0.98) { 
+                        px += (Math.random()-0.5)*8; 
+                        py += (Math.random()-0.5)*8;
+                        glitchColor = Math.random()>0.5 ? '#fff' : '#000';
+                    }
+
+                    if(id===1){
+                        if(isClash) {
+                            if(clashBiome === 'final_collapse') {
+                                ctx.fillStyle='#000'; ctx.fillRect(px,py,TILE,TILE); ctx.strokeStyle='#b91c1c'; ctx.strokeRect(px,py,TILE,TILE);
+                            }
+                            else if(glitchColor) ctx.fillStyle = glitchColor;
+                            else if(clashBiome === 'magma_c') { ctx.fillStyle='#1e1b4b'; ctx.fillRect(px,py,TILE,TILE); ctx.strokeStyle='#4338ca'; ctx.strokeRect(px,py,TILE,TILE); } // Fuego Azul
+                            else if(clashBiome === 'forest_c') { ctx.fillStyle='#292524'; ctx.fillRect(px,py,TILE,TILE); ctx.fillStyle='#57534e'; ctx.fillRect(px,py,TILE,5); } // Bosque Muerto
+                            else if(clashBiome === 'neon_c') { ctx.fillStyle='#000'; ctx.fillRect(px,py,TILE,TILE); ctx.strokeStyle='#ef4444'; ctx.lineWidth=2; ctx.strokeRect(px+5,py+5,30,30); } // System Error
+                            else { ctx.fillStyle='#2e1065'; ctx.fillRect(px,py,TILE,TILE); ctx.strokeStyle='#d8b4fe'; ctx.strokeRect(px+2,py+2,36,36); }
+                        }
+                        else if(currentMap==='destruction'){ ctx.fillStyle='#111'; ctx.fillRect(px,py,TILE,TILE); ctx.strokeStyle='#fbbf24'; ctx.strokeRect(px+2,py+2,36,36); }
+                        else if(currentMap==='neon'){ ctx.fillStyle='#020617'; ctx.fillRect(px,py,TILE,TILE); ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2; ctx.strokeRect(px+2,py+2,36,36); }
+                        else if(currentMap==='forest'){ ctx.fillStyle='#3f6212'; ctx.fillRect(px,py,TILE,TILE); ctx.fillStyle='#4ade80'; ctx.fillRect(px,py,TILE,8); }
+                        else if(currentMap==='magma'){ ctx.fillStyle='#450a0a'; ctx.fillRect(px,py,TILE,TILE); ctx.fillStyle='#b91c1c'; ctx.fillRect(px+5,py+5,30,30); }
+                        else if(currentMap==='glacier'){ ctx.fillStyle='rgba(186, 230, 253, 0.5)'; ctx.fillRect(px,py,TILE,TILE); ctx.strokeStyle='#fff'; ctx.strokeRect(px,py,TILE,TILE); }
+                        else if(currentMap==='void'){ ctx.fillStyle='#2e1065'; ctx.fillRect(px,py,TILE,TILE); ctx.strokeStyle='#a855f7'; ctx.strokeRect(px,py,TILE,TILE); }
+                        else { ctx.fillStyle='#1e293b'; ctx.fillRect(px,py,TILE,TILE); ctx.fillStyle='#0f172a'; ctx.fillRect(px+4,py+4,32,32); }
+                    }
+                    else if(id===4){ctx.fillStyle='#94a3b8';ctx.fillRect(px,py,40,10);ctx.fillStyle='#334155';ctx.fillRect(px,py+10,40,4);}
+                    else if(id===6){ctx.fillStyle='#fbbf24'; ctx.fillRect(px+10,py,4,TILE); ctx.fillRect(px+26,py,4,TILE); for(let j=0;j<4;j++) ctx.fillRect(px+10,py+10*j,20,4);}
+                    else if(id===5){
+                        if(currentMap==='destruction') {
+                            let w=Math.sin(frame*0.2+x)*3; ctx.fillStyle='#4c1d95'; ctx.fillRect(px,py+10,40,30); 
+                            ctx.fillStyle='#000'; ctx.beginPath(); ctx.moveTo(px,py+10); ctx.quadraticCurveTo(px+20,py+10+w,px+40,py+10); ctx.lineTo(px+40,py+40); ctx.lineTo(px,py+40); ctx.fill();
+                        } else if(clashBiome === 'final_collapse') {
+                             // LAVA DE CORRUPCION (ROJO/NEGRO)
+                             let w=Math.sin(frame*0.4+x)*6; 
+                             ctx.fillStyle='#1a0505'; ctx.fillRect(px,py+10,40,30); 
+                             ctx.fillStyle=Math.random()>0.8?'#fff':'#7f1d1d'; // Glitch estático
+                             ctx.beginPath(); ctx.moveTo(px,py+10); ctx.quadraticCurveTo(px+20,py+10+w,px+40,py+10); ctx.lineTo(px+40,py+40); ctx.lineTo(px,py+40); ctx.fill();
+                        } else if(clashBiome === 'magma_c') {
+                            // FUEGO AZUL
+                            let w=Math.sin(frame*0.3+x)*5; ctx.fillStyle='#3730a3'; ctx.fillRect(px,py+10,40,30); 
+                            ctx.fillStyle='#6366f1'; ctx.beginPath(); ctx.moveTo(px,py+10); ctx.quadraticCurveTo(px+20,py+10+w,px+40,py+10); ctx.lineTo(px+40,py+40); ctx.lineTo(px,py+40); ctx.fill();
+                        } else {
+                            let w=Math.sin(frame*0.1+x)*4;ctx.fillStyle='#c2410c';ctx.fillRect(px,py+10,40,30);ctx.fillStyle='#ea580c';ctx.beginPath();ctx.moveTo(px,py+10);ctx.quadraticCurveTo(px+20,py+10+w,px+40,py+10);ctx.lineTo(px+40,py+40);ctx.lineTo(px,py+40);ctx.fill();
+                        }
+                    }
+                    else if(id>=30)Renderer.drawSpike(px,py,id);else if(id===9){ctx.fillStyle='#000';ctx.fillRect(px,py,40,40);}
+                }
+                for(let mp of movingPlats)mp.update(),mp.draw(ctx);
+            },
+            drawSpike:(x,y,id)=>{ctx.fillStyle='#dc2626';ctx.beginPath();if(id===30){ctx.moveTo(x,y+40);ctx.lineTo(x+20,y);ctx.lineTo(x+40,y+40);}else if(id===31){ctx.moveTo(x,y);ctx.lineTo(x+40,y+20);ctx.lineTo(x,y+40);}else if(id===32){ctx.moveTo(x,y);ctx.lineTo(x+20,y+40);ctx.lineTo(x+40,y);}else{ctx.moveTo(x+40,y);ctx.lineTo(x,y+20);ctx.lineTo(x+40,y+40);}ctx.fill();},
+            drawParticles:()=>{for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx;p.y+=p.vy;p.life--;if(p.isSlash){ctx.strokeStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=10;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,25,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;}else{ctx.fillStyle=p.color;ctx.globalAlpha=p.life/30;ctx.fillRect(p.x,p.y,p.size,p.size);ctx.globalAlpha=1;}if(p.life<=0)particles.splice(i,1);}},
+            drawEnvParticles:()=>{for(let i=environmentParticles.length-1;i>=0;i--){let p=environmentParticles[i];
+                if(p.binary) {
+                    // DIBUJAR 1 y 0
+                    p.x+=p.vx; p.y+=p.vy; p.life--; 
+                    ctx.font = `${p.s}px monospace`; ctx.fillStyle = p.c; ctx.globalAlpha = p.life/60;
+                    ctx.fillText(Math.random()>0.5?"1":"0", p.x, p.y); ctx.globalAlpha = 1;
+                } else if(p.bh) {
+                    let dx = 640 - p.x; let dy = 360 - p.y;
+                    p.x += dx * 0.02; p.y += dy * 0.02;
+                    p.life--;ctx.fillStyle=p.c;ctx.globalAlpha=p.life/100;ctx.fillRect(p.x,p.y,p.s,p.s);ctx.globalAlpha=1;
+                } else {
+                    p.x+=p.vx;p.y+=p.vy;
+                    p.life--;ctx.fillStyle=p.c;ctx.globalAlpha=p.life/100;ctx.fillRect(p.x,p.y,p.s,p.s);ctx.globalAlpha=1;
+                }
+                if(p.life<=0)environmentParticles.splice(i,1);}}
+        };
         Game.init();
     </script>
 </body>
