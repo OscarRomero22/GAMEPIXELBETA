@@ -96,7 +96,7 @@
             <div class="w-3/4 max-w-4xl flex flex-col items-center">
                 <h2 class="text-6xl font-black text-red-600 mb-8 glitch-text tracking-widest text-shadow-red" style="text-shadow: 0 0 20px #ef4444;">AMENAZA DETECTADA</h2>
                 <div id="cinematic-text" class="text-2xl font-mono text-slate-300 leading-relaxed min-h-[250px] text-center"></div>
-                <button onclick="Game.skipCinematic()" class="mt-16 py-3 px-8 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 font-bold tracking-widest transition-all">PRESIONA PARA SALTAR &gt;&gt;</button>
+                <button id="btn-skip-cinematic" onclick="Game.skipCinematic()" class="mt-16 py-3 px-8 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 font-bold tracking-widest transition-all">PRESIONA PARA SALTAR &gt;&gt;</button>
             </div>
         </div>
 
@@ -348,7 +348,7 @@
                     document.getElementById('lobby-room-code').innerText = "CÓDIGO: " + input;
                     document.getElementById('lobby-p1-name').innerText = p1Config.name;
                     document.getElementById('lobby-p2-name').innerText = "ESPERANDO AMIGO...";
-                    document.getElementById('lobby-host-controls').classList.add('hidden');
+                    document.getElementById('lobby-host-controls').classList.remove('hidden');
                 });
 
                 NetP2P.peer.on('connection', (connection) => {
@@ -418,6 +418,9 @@
                     }
                     if(data.type === 'startCoop') {
                         Game.startCinematic();
+                    }
+                    if(data.type === 'skipCinematic') {
+                        Game.skipCinematic(true);
                     }
                     if(data.type === 'move') {
                         // Recibir movimiento del rival
@@ -532,7 +535,9 @@
                 }, 125); 
             },
             stopMusic:()=>{if(AudioEngine.musicInterval){clearInterval(AudioEngine.musicInterval);AudioEngine.musicInterval=null;}},
-            sfx:{jump:()=>AudioEngine.playTone(150,'sine',0.2,0.1),hit:()=>AudioEngine.playTone(80,'sawtooth',0.1,0.2),slash:()=>AudioEngine.playTone(400,'triangle',0.1,0.05),ui:()=>AudioEngine.playTone(800,'sine',0.05,0.05),unlock:()=>AudioEngine.playTone(1000,'square',0.5,0.1),win:()=>{setTimeout(()=>AudioEngine.playTone(300,'square',0.5,0.1),0);setTimeout(()=>AudioEngine.playTone(500,'square',1.0,0.1),400);},
+            sfx:{jump:()=>AudioEngine.playTone(150,'sine',0.2,0.1),hit:()=>AudioEngine.playTone(80,'sawtooth',0.1,0.2),slash:()=>AudioEngine.playTone(400,'triangle',0.1,0.05),ui:()=>AudioEngine.playTone(800,'sine',0.05,0.05),unlock:()=>AudioEngine.playTone(1000,'square',0.5,0.1),
+            // VICTORIA / PORTAL MEJORADO (Tonos suaves y cortos, no más ruidos molestos)
+            win:()=>{AudioEngine.playTone(400,'sine',0.2,0.1);setTimeout(()=>AudioEngine.playTone(600,'sine',0.4,0.1),150);},
             warp:()=>AudioEngine.playTone(100,'sawtooth',0.8,0.15),collapse:()=>{AudioEngine.playTone(50,'sawtooth',3.0,0.4);setTimeout(()=>AudioEngine.playTone(40,'square',2.0,0.3),500);},
             roar:()=>{AudioEngine.playTone(60,'sawtooth',3.0,0.5);setTimeout(()=>AudioEngine.playTone(40,'square',2.5,0.6),500);setTimeout(()=>AudioEngine.noise(2.5,'rumble'),1000);}}
         };
@@ -579,7 +584,7 @@
             constructor(wave) {
                 this.w = 50; this.h = 80; 
                 this.x = 640; this.y = 100;
-                this.maxHp = 200 + (wave * 50); 
+                this.maxHp = 10; // VIDA DE PRUEBAS REDUCIDA A 10
                 this.hp = this.maxHp;
                 this.wave = wave;
                 this.vx = 0; this.vy = 0;
@@ -631,6 +636,9 @@
                         whiteFlashAlpha = 1.5; 
                         SFX.warp(); 
                         
+                        // Zumbido de viento de fondo al convertirse en arena muerta
+                        AudioEngine.noise(100, 'wind'); 
+
                         grid[15][7] = 100;
                         grid[15][8] = 100;
                         grid[16][7] = 100;
@@ -656,7 +664,7 @@
                     }
                     if (this.recovering === 0) {
                         this.wave++;
-                        this.maxHp = 200 + (this.wave * 50); 
+                        this.maxHp = 10; // VIDA DE PRUEBAS REDUCIDA A 10
                         this.hp = this.maxHp;
                         document.getElementById('coop-wave-hud').innerText = `RONDA ${this.wave}`;
                         this.dialogueShown = { spawn: false, half: false };
@@ -710,6 +718,9 @@
                     if (this.wave >= 5) {
                         this.state = 'dying';
                         this.recovering = 180; 
+                        
+                        // PARAR LA MÚSICA AL INICIAR EL TEMBLOR FINAL
+                        AudioEngine.stopMusic(); 
                         SFX.collapse();
                     } else {
                         this.recovering = 600; 
@@ -893,8 +904,6 @@
                 if(onLadder && (this.getInput('u')||this.getInput('d'))) this.climbing=true;
                 if(!onLadder) this.climbing=false;
 
-                // Solo el jugador que controla el teclado o la CPU mueve el personaje.
-                // En modo P2P, el enemigo se actualiza por la red, así que ignoramos físicas de inputs para él.
                 let soyLocal = (!NetP2P.activo) || (NetP2P.activo && ((NetP2P.esHost && this.id===1) || (!NetP2P.esHost && this.id===2)));
 
                 if(this.stun<=0 && soyLocal){
@@ -920,7 +929,6 @@
 
                 if(this.atkCd>0)this.atkCd--;
                 
-                // En P2P, las físicas locales aplican para evitar lag, pero el control lo dicta la red.
                 if(inLava){this.vx*=0.6;this.vy*=0.6;if(frame%30===0)this.hit(2, true);}
                 else if(!this.climbing){this.vy+=curGrav;this.vx*=FRICTION;}
                 
@@ -937,7 +945,6 @@
                     if (grid[cx] && grid[cx][cy] === 100) Game.endGame(0, true); 
                 }
 
-                // EMISOR P2P: Solo el dueño del personaje manda su posición al otro por internet
                 if (NetP2P.activo && soyLocal && state === 'GAME') {
                     NetP2P.conn.send({ 
                         type: 'move',
@@ -1279,6 +1286,13 @@
             document.getElementById('coop-modal').classList.remove('active');
             Game.showScreen('cinematic-screen');
             
+            // Si hay multijugador activo y NO eres el Host, oculta el botón
+            if(NetP2P.activo && !NetP2P.esHost) {
+                document.getElementById('btn-skip-cinematic').classList.add('hidden');
+            } else {
+                document.getElementById('btn-skip-cinematic').classList.remove('hidden');
+            }
+            
             AudioEngine.stopAmbient();
             AudioEngine.noise(15, 'wind');
             if(Game.cinematicSfxInterval) clearInterval(Game.cinematicSfxInterval);
@@ -1304,7 +1318,17 @@
             }, 40);
         };
         
-        Game.skipCinematic=()=>{
+        Game.skipCinematic=(fromNetwork = false)=>{
+            // Prevenir que el cliente lo salte si no viene de una señal del Host
+            if(NetP2P.activo && !NetP2P.esHost && !fromNetwork) {
+                return;
+            }
+
+            // Si eres el Host, avísale al cliente por la red para sincronizar el salto
+            if(NetP2P.activo && NetP2P.esHost && !fromNetwork) {
+                NetP2P.conn.send({ type: 'skipCinematic' });
+            }
+
             SFX.ui();
             if(Game.cinematicInterval) clearInterval(Game.cinematicInterval);
             if(Game.cinematicSfxInterval) clearInterval(Game.cinematicSfxInterval);
@@ -1485,10 +1509,11 @@
         Game.previewMap=(t)=>{Game.loadMap(t);document.getElementById('preview-title').innerText=t.toUpperCase();};
         
         Game.endGame=(winnerId, isCoopWin = false)=>{
-            if(state!=='GAME')return; 
+            // AÑADIDO || isGameOver para evitar que se reproduzca en bucle 60 veces por segundo
+            if(state!=='GAME' || isGameOver) return; 
             isGameOver = true; 
             AudioEngine.stopMusic && AudioEngine.stopMusic();
-            AudioEngine.sfx.win();
+            AudioEngine.sfx.win(); // Ahora sonará bonito y una sola vez
             document.getElementById('victory-screen').classList.remove('hidden');
             
             if(isCoopWin) {
